@@ -1,0 +1,3 @@
+[submodule "src/main/resources/resources/octane"]
+	path = src/main/resources/resources/octane
+	url = https://github.com/chromium/octane
