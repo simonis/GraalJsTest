@@ -29,9 +29,9 @@ $ mvn dependency:tree
 
 Without the GraalVM compiler:
 ```
-java --module-path target/js-deps --add-modules org.graalvm.polyglot \
-     -cp target/graal-js-test-1.0-SNAPSHOT.jar \
-     -Diterations=5 io.simonis.graaljs.test.RunOctaneBenchmark
+$ java --module-path target/js-deps --add-modules org.graalvm.polyglot \
+       -cp target/graal-js-test-1.0-SNAPSHOT.jar \
+       -Diterations=5 io.simonis.graaljs.test.RunOctaneBenchmark
 ...
 [engine] WARNING: The polyglot engine uses a fallback runtime that does not support runtime compilation to native code.
 Execution without runtime compilation will negatively impact the guest application performance.
