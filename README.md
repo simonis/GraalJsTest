@@ -62,10 +62,10 @@ Score (version 9): 586
 With the GraalVM compiler:
 ```
 $ java --module-path target/js-deps --add-modules org.graalvm.polyglot \
-	   -cp target/graal-js-test-1.0-SNAPSHOT.jar \
-	   -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI \
+       -cp target/graal-js-test-1.0-SNAPSHOT.jar \
+       -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI \
        --upgrade-module-path target/compiler-deps \
-	   -Diterations=5 io.simonis.graaljs.test.RunOctaneBenchmark
+       -Diterations=5 io.simonis.graaljs.test.RunOctaneBenchmark
 Richards: 1587
 DeltaBlue: 540
 Crypto: 3769
