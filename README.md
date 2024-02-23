@@ -29,7 +29,9 @@ $ mvn dependency:tree
 
 Without the GraalVM compiler:
 ```
-java --module-path target/js-deps -cp target/graal-js-test-1.0-SNAPSHOT.jar --add-modules org.graalvm.polyglot -Diterations=5 io.simonis.graaljs.test.RunOctaneBenchmark
+java --module-path target/js-deps --add-modules org.graalvm.polyglot \
+     -cp target/graal-js-test-1.0-SNAPSHOT.jar \
+     -Diterations=5 io.simonis.graaljs.test.RunOctaneBenchmark
 ...
 [engine] WARNING: The polyglot engine uses a fallback runtime that does not support runtime compilation to native code.
 Execution without runtime compilation will negatively impact the guest application performance.
@@ -59,7 +61,11 @@ Score (version 9): 586
 
 With the GraalVM compiler:
 ```
-$ java -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI --module-path target/js-deps -cp target/graal-js-test-1.0-SNAPSHOT.jar --add-modules org.graalvm.polyglot --upgrade-module-path target/compiler-deps -Diterations=5 io.simonis.graaljs.test.RunOctaneBenchmark
+$ java --module-path target/js-deps --add-modules org.graalvm.polyglot \
+	   -cp target/graal-js-test-1.0-SNAPSHOT.jar \
+	   -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI \
+       --upgrade-module-path target/compiler-deps \
+	   -Diterations=5 io.simonis.graaljs.test.RunOctaneBenchmark
 Richards: 1587
 DeltaBlue: 540
 Crypto: 3769
