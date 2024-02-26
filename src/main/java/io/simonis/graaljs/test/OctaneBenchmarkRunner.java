@@ -21,8 +21,6 @@ public class OctaneBenchmarkRunner {
 
   public static void main(String[] args) throws Exception {
 
-    Engine engine = Engine.newBuilder("js").build();
-
     URL octaneUrl = OctaneBenchmarkRunner.class.getClassLoader().getResource(OCTANE);
     String[] octaneUrlParts = octaneUrl.toString().split("!");
     FileSystem fs;
@@ -114,9 +112,9 @@ function PrintScore(score) {
   }
 }
 
-
-BenchmarkSuite.config.doWarmup = undefined;
-BenchmarkSuite.config.doDeterministic = undefined;
+// Try to be as reproducible as possible
+BenchmarkSuite.config.doWarmup = true;
+BenchmarkSuite.config.doDeterministic = true;
 
 var runner = { NotifyResult: PrintResult,
                NotifyError: PrintError,
@@ -133,29 +131,33 @@ function runOctane() {
 
     int iterations = Integer.getInteger("iterations", 1);
 
-    try (Context context = Context.newBuilder("js")
-         .engine(engine)
-         .allowIO(true)
-         // Needed for 'js.shell' option below
+    try (Engine engine = Engine.newBuilder("js")
          .allowExperimentalOptions(true)
-         // Required for 'octane/zlib' which requires the non-standard, global 'read()' function.
-         // The "js.shell" option provides global built-ins like 'read()' for compatibility with d8.
-         .option("js.shell", "true")
-         // 'run.js' has to access the benchmarks and benchmark data which might be in the jar file
-         // from which we are running so we have to make sure we're using the right file system.
-         .fileSystem(org.graalvm.polyglot.io.FileSystem.newFileSystem(fs))
-         .currentWorkingDirectory(octanePath)
          .build()) {
+      try (Context context = Context.newBuilder("js")
+           .engine(engine)
+           .allowIO(true)
+           // Needed for 'js.shell' option below
+           .allowExperimentalOptions(true)
+           // Required for 'octane/zlib' which requires the non-standard, global 'read()' function.
+           // The "js.shell" option provides global built-ins like 'read()' for compatibility with d8.
+           .option("js.shell", "true")
+           // 'run.js' has to access the benchmarks and benchmark data which might be in the jar file
+           // from which we are running so we have to make sure we're using the right file system.
+           .fileSystem(org.graalvm.polyglot.io.FileSystem.newFileSystem(fs))
+           .currentWorkingDirectory(octanePath)
+           .build()) {
 
-      context.eval(runOctane);
+        context.eval(runOctane);
 
-      Value jsBindings = context.getBindings("js");
-      Value runner = jsBindings.getMember("runOctane");
-      assert runner.canExecute();
+        Value jsBindings = context.getBindings("js");
+        Value runner = jsBindings.getMember("runOctane");
+        assert runner.canExecute();
 
-      for (int i = 0; i < iterations; i++) {
-        runner.execute();
-        System.out.println("\n");
+        for (int i = 0; i < iterations; i++) {
+          runner.execute();
+          System.out.println("\n");
+        }
       }
     }
   }
