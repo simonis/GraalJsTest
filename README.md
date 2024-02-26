@@ -3,6 +3,9 @@
 #### Building
 
 ```
+$ $ git clone https://github.com/simonis/GraalJsTest.git
+$ cd GraalJsTest
+$ git submodule update --init --recursive
 $ JAVA_HOME=<path-to-jdk17+> mvn clean package
 ```
 

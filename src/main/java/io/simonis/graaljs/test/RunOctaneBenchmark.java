@@ -63,7 +63,7 @@ public class RunOctaneBenchmark {
       System.out.println("\n");
 
       /*
-      System.out.println("\Second run..\n");
+      System.out.println("\nSecond run..\n");
 
       // The following code works, but `mandreel.js` run into a
       // `RangeError: Maximum call stack size exceeded`
