@@ -1,0 +1,68 @@
+### GraalVM
+
+- [Isolates and Compressed References: More Flexible and Efficient Memory Management via GraalVM](https://medium.com/graalvm/isolates-and-compressed-references-more-flexible-and-efficient-memory-management-for-graalvm-a044cc50b67e) by Christian Wimmer, Jan 25, 2019
+- [Polyglot Isolates](https://www.graalvm.org/latest/reference-manual/embed-languages/#polyglot-isolates). On Oracle GraalVM, a Polyglot engine can be configured to run in a dedicated Native Image isolate (since version 23.1). A polyglot engine in this mode executes within a VM-level fault domain with a dedicated garbage collector and JIT compiler. Polyglot isolates are useful for polyglot sandboxing. Running languages in an isolate works with HotSpot and Native Image host virtual machines. Languages used as polyglot isolates can be downloaded from Maven Central using the `-isolate` suffix.
+  - What's the difference between [`org.graalvm.js`](https://mvnrepository.com/artifact/org.graalvm.js) and [`org.graalvm.polyglot`](https://mvnrepository.com/artifact/org.graalvm.polyglot) on Maven Central?
+  - e.g. [`org.graalvm.polyglot » js-isolate`](https://mvnrepository.com/artifact/org.graalvm.polyglot/js-isolate) is just a POM with a dependency on [`org.graalvm.js » js-isolate`](https://mvnrepository.com/artifact/org.graalvm.js/js-isolate) and [`org.graalvm.truffle » truffle-enterprise`](https://mvnrepository.com/artifact/org.graalvm.truffle/truffle-enterprise).
+  - `js-isolate-23.1.2-sources.jar` only contains the sources of `PolyglotIsolateResource.java` (and `PolyglotIsolateResourceProvider.java` which seems to be generated from the first one).
+  - `js-isolate-23.1.2-sources.jar` contains a native version of the `org.graalvm.js.isolate` module for several platforms (e.g. `linux/amd64/libvm/libjsvm.so` (~200mb), `windows/amd64/libvm/jsvm.dll`, ..).
+    - ToDo: does the native shared library already contain precompiled version of Truffle and GraalJS?
+- [Polyglot Sandboxing](https://www.graalvm.org/latest/security-guide/polyglot-sandbox/). This feature (see [`org.graalvm.polyglot.SandboxPolicy`](https://www.graalvm.org/sdk/javadoc/org/graalvm/polyglot/SandboxPolicy.html)) is available since version 23 and presumably only available in GraalVM Enterprise.
+  - ToDo: what'S the difference between "Polyglot Isolates" and "Polyglot Sandboxing"? Are they orthogonal? Is it possible to combine Sandboxing with Isolates?
+  - ToDo: find out at which level (i.e. GraalJS, Polyglot, Truffle, GraalVM Compiler, GraalVM SubstrateVM) this feature is implemented?
+    - Looks like it is a [Truffle enterprise feature](https://www.graalvm.org/latest/reference-manual/embed-languages/#switching-to-the-fallback-engine): "*Since `truffle-enterprise` is excluded, the fallback engine does not support advanced extensions like sandbox limits or polyglot isolates*".
+- [Mandrel: A community distribution of GraalVM for the Red Hat build of Quarkus](https://developers.redhat.com/blog/2020/06/05/mandrel-a-community-distribution-of-graalvm-for-the-red-hat-build-of-quarkus/) by Mark Little, June 5, 2020
+- [Mandrel: A specialized distribution of GraalVM for Quarkus](https://developers.redhat.com/blog/2021/04/14/mandrel-a-specialized-distribution-of-graalvm-for-quarkus) by Severin Gehwolf, April 14, 2021
+- [GraalVM, Galahad, and a New Release Schedule](https://medium.com/graalvm/graalvm-galahad-and-a-new-release-schedule-d081d1031bba)
+  - Starting with JDK 20 in March 2023, GraalVM will follow the JDK’s six-month release cadence (before GraalVM Enterprise and Community Editions have followed a three-month cadence).
+  - Starting with JDK 20, GraalVM releases will only support the latest JDK version (just as Oracle OpenJDK releases do).
+  - GraalVM will adopt the JDK’s release numbering scheme based on the supported Java version. To avoid confusion with older releases, new releases will be named GraalVM for JDK &lt;Java version&gt;.
+- [Introducing the GraalVM Free License](https://blogs.oracle.com/java/post/graalvm-free-license).
+  - Oracle is making Oracle GraalVM for JDK 17 and Oracle GraalVM for JDK 20 (previously known as Oracle GraalVM Enterprise) and subsequent releases, including all quarterly security updates, free.
+  - These releases will be available under the [GraalVM Free Terms and Conditions](https://www.oracle.com/downloads/licenses/graal-free-license.html) (GFTC) license. This license .. permits free use for all users, even for production use.
+  - For designated Long Term Support releases (GraalVM for JDK 17), Oracle will provide these free GFTC releases until one full year after the subsequent LTS release.
+- [GraalVM Community Edition Release Calendar](https://www.graalvm.org/release-calendar/) (also see [Oracle GraalVM Release Calendar](https://docs.oracle.com/en/graalvm/release-calendar.html))
+
+### GraalVM JavaScript
+
+- [Run GraalVM JavaScript on a Stock JDK (JDK17)](https://www.graalvm.org/jdk17/reference-manual/js/RunOnJDK/)
+  - [GraalJS on Maven Central (org.graalvm.js/js)](https://mvnrepository.com/artifact/org.graalvm.js/js) - currently 23.0.3 (Jan 17, 2024)
+  - Binary packages have to be installed with [GraalVM Updater](https://www.graalvm.org/jdk17/reference-manual/js/) ("*Since GraalVM 22.2, the JavaScript support is packaged in a separate GraalVM component. It can be installed with the GraalVM Updater*"). However, the latest version on GitHub is [GraalJS 23.0.2](https://github.com/oracle/graaljs/releases/tag/graal-23.0.2)
+  - There are two versions available: `graaljs-23.0.2-linux-amd64.tar.gz` which basically only contains the `js` binary plus `libjsvm.so` and `js-installable-svm-java17-linux-amd64-23.0.2.jar` which also contains the former, but in addition `graaljs.jar` and `graaljs-launcher.jar`. Is it correct that `libjsvm.so` contains a natively compiled version of both, Truffle and GraalJS?
+- [Run GraalVM JavaScript on a Stock JDK (JDK21)](https://www.graalvm.org/jdk21/reference-manual/js/RunOnJDK/)
+  - [Js Community on Maven Central (org.graalvm.polyglot/js-community)](https://mvnrepository.com/artifact/org.graalvm.polyglot/js-community) - currently 23.1.2 (Jan 17, 2024)
+  - https://github.com/graalvm/graaljs redirects to https://github.com/oracle/graaljs
+  - Binary downloads of [GraalJS - GraalVM Community 23.1.2](https://github.com/oracle/graaljs/releases/tag/graal-23.1.2) (i.e. GraalJS 23.1.2 bundled with GraalVM Community Edition for JDK 21.0.2)
+    - What's the difference between `graaljs-23.1.2-linux-amd64.tar.gz` and `graaljs-community-23.1.2-linux-amd64.tar.gz` (or `graaljs-jvm-23.1.2-linux-amd64.tar.gz` and `graaljs-community-jvm-23.1.2-linux-amd64.tar.gz`) respectively?
+    *[As of GraalVM for JDK 21, the JavaScript (GraalJS) and Node.js runtimes are available as standalone distributions](https://www.graalvm.org/jdk21/reference-manual/js/). Two standalone language runtime options are available for both Oracle GraalVM and GraalVM Community Edition: a Native Image compiled native launcher or a JVM-based runtime (included). To distinguish between them, the GraalVM Community Edition version has the suffix -community in the name... A standalone that comes with a JVM has a -jvm suffix in a name*.
+    - The `community-jvm` version contains a lot of additional modules compared to Oracle's `-jvm` version (e.g. `chromeinspector.jar`, `dap.jar`, `insight.jar`, `insight-heap.jar`, etc.). This can be seen when running `js --version:graalvm` which prints no *Installed Tools* at all for the non-community version.
+    - On the ot her hand, the non `-jvm` version from ORacle contains all the *Installed Tools* from the corresponding `-coommunity-jvm` version plus the additional [`Sandbox`](https://www.graalvm.org/latest/security-guide/polyglot-sandbox/) tool.
+    - The JVM in the `community-jvm` version contains the two additional (apparently empty, upgradeable?) modules `jdk.compiler.graal` and `jdk.compiler.graal.management` (see `graaljs-community-23.1.2-linux-amd64/jvm/release`).
+  - What's the difference between the tags `vm-ee-23.1.2`, `vm-ce-23.1.2`, `vm-23.1.2` and `graal-23.1.2` in the https://github.com/oracle/graaljs repository and which tag/branch corresponds to the GitHub release `graaljs-community-23.1.2-linux-amd64.tar.gz` and the Maven central version `23.1.2`. At least for now, all the tags seem to be identical?
+  - The `-jvm` versions contain the native version of the GraalVM Compiler (i.e. `jvm/lib/libjvmcicompiler.so`) and enables it with `-XX:+EnableJVMCIProduct -XX:+UseJVMCINativeLibrary` (`EnableJVMCIProduct` means *Allow JVMCI to be used in product mode. This alters a subset of JVMCI flags to be non-experimental, defaults `UseJVMCICompiler` and `EnableJVMCI` to true and defaults `UseJVMCINativeLibrary` to true if a JVMCI native library is available*).
+
+### GraalVM Truffle
+
+- [Truffle Unchained — Portable Language Runtimes as Java Libraries](https://medium.com/graalvm/truffle-unchained-13887b77b62c). Also see [GR-43819: Split Graal-SDK into new modules: polyglot, word, collections and nativeimage](https://github.com/oracle/graal/pull/7171) and the [Changelog entry for Graal Version 23.1.0](https://github.com/oracle/graal/blob/master/sdk/CHANGELOG.md#version-2310).
+  - ([GR-47917](https://github.com/oracle/graal/pull/7239)) Added class-path isolation if polyglot is used from the class-path. At class initialization time and if polyglot is used from the class-path then the polyglot implementation spawns a module class loader with the polyglot runtime and language implementations. This allows to use an optimized runtime even if languages and polyglot are used from the class-path. Note that for best performance, it is recommended to load polyglot and the languages from the module-path. Comment from [org.graalvm.polyglot.Engine$ClassPathIsolation](https://github.com/oracle/graal/blob/774141206b82771ab80e0ea38d26d660292eb8ab/sdk/src/org.graalvm.polyglot/src/org/graalvm/polyglot/Engine.java#L1768): "*If Truffle is on the class-path (or a language), we do not want to expose these classes to embedders (users of the polyglot API). Unless disabled, we load all Truffle jars on the class-path in a special module layer instead of loading it through the class-path in the unnamed module*". This feature is controlled by `-Dpolyglotimpl.DisableClassPathIsolation` which defaults to `true` and observed by `-Dpolyglotimpl.TraceClassPathIsolation=true`.
+  - ToDo: do we want to GraalJS & Truffle on the class or on the module path? The Graal Compiler has to be placed on the `--upgrade-module-path`. Also, if we put GraalJS & Truffle on the module path but our application classes are running form the class path we have to explicitly do `--add-modules org.graalvm.polyglot`.
+- [Optimizing Truffle Interpreters](https://docs.oracle.com/en/graalvm/jdk/17/docs/graalvm-as-a-platform/language-implementation-framework/Optimizing/#optimizing-truffle-interpreters)
+  - E.g. `-Dpolyglot.engine.TraceCompilation=true` or `-Dpolyglot.engine.CompilationStatistics=true` (which requires ` Engine.newBuilder("js").allowExperimentalOptions(true)`).
+  - `-Dpolyglot.engine.TraceCompilation=true` will give you output like:
+    ```
+    [engine] opt done   id=314   Math.floor                                         |Tier 1|Time   334( 225+109 )ms|AST    2|Inlined   0Y   0N|IR    103/   212|CodeSize    1024|Addr 0x7f5178b3b060|Timestamp 34053963283959|Src <builtin>:1
+    ```
+    Together with `-Dgraal.PrintCompilation=true` (see [below](#graalvm-compiler)) this prints:
+    ```
+    [engine] opt done   id=314   Math.floor                                         |Tier 1|Time   334( 225+109 )ms|AST    2|Inlined   0Y   0N|IR    103/   212|CodeSize    1024|Addr 0x7f5178b3b060|Timestamp 34053963283959|Src <builtin>:1
+    TruffleHotSpotCompilation-6793 LTruffleIR/Tier1;                                                      Math_floor                                    ()LTruffleIR/Tier1;                                 | 325583us  2084B bytecodes  1024B codesize
+    ```
+- Mandrel [discussion/PR](https://github.com/graalvm/mandrel-packaging/pull/369) about supporting Truffle in native-image with Mandrel.
+- [Truffle Enterprise](https://mvnrepository.com/artifact/org.graalvm.truffle/truffle-enterprise/23.1.2) is available for download from Maven Central (`org.graalvm.truffle/truffle-enterprise`) under the GFTC but the sources artifact `truffle-enterprise-23.1.2-sources.jar` only contains a `LICENSE` file with the GFTC.
+
+### GraalVM Compiler
+
+- Run with `-XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI --upgrade-module-path <path-to-compiler.jar-module>` to enable native compilation of GraalJS/Truffle code with tha jar-based GraalVM compiler.
+- [graal/compiler/docs/Debugging.md](https://github.com/oracle/graal/blob/master/compiler/docs/Debugging.md) documents the option `-XX:+JVMCIPrintProperties` which can be used to print the graal compiler related command line properties like e.g. `-Dgraal.PrintCompilation=true`. Notice that starting with JDK 22, the [Graal compiler options have been moved to the `jdk.graal` prefix](https://github.com/oracle/graal/commit/6f34cc046f3b2) (e.g. )`-Djdk.graal.PrintCompilation=true`
+  - Notice that `-XX:+JVMCIPrintProperties` only work son a GraalVM JDK standalone. On a standard JDK you additionally need `-XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI --upgrade-module-path compiler-23.1.2.jar --module-path word-23.1.2.jar:truffle-compiler-23.1.2.jar:collections-23.1.2.jar` in order make the Graal Compiler available (activating it with `-XX:+UseJVMCICompiler` is not required).
+- [Building Mandrel/libgraal at tag mandrel-23.1.2.0-Final with JDK 17 doesn't work](https://github.com/graalvm/mandrel/issues/688)
