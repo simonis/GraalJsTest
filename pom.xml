@@ -12,21 +12,53 @@
   <properties>
     <maven.compiler.source>17</maven.compiler.source>
     <maven.compiler.target>17</maven.compiler.target>
-    <graalvm.version>23.1.2</graalvm.version>
   </properties>
-  
+
+  <profiles>
+    <profile>
+      <id>graal-23-1-2</id>
+      <activation>
+        <activeByDefault>true</activeByDefault>
+      </activation>
+      <properties>
+        <graalvm.version>23.1.2</graalvm.version>
+      </properties>
+      <dependencies>
+        <dependency>
+          <groupId>org.graalvm.polyglot</groupId>
+          <artifactId>polyglot</artifactId>
+          <version>${graalvm.version}</version>
+        </dependency>
+        <dependency>
+          <groupId>org.graalvm.polyglot</groupId>
+          <artifactId>js-community</artifactId>
+          <version>${graalvm.version}</version>
+          <type>pom</type>
+        </dependency>
+      </dependencies>
+    </profile>
+
+    <profile>
+      <id>graal-23-0-3</id>
+      <properties>
+        <graalvm.version>23.0.3</graalvm.version>
+      </properties>
+      <dependencies>
+        <dependency>
+          <groupId>org.graalvm.sdk</groupId>
+          <artifactId>graal-sdk</artifactId>
+          <version>${graalvm.version}</version>
+        </dependency>
+        <dependency>
+          <groupId>org.graalvm.js</groupId>
+          <artifactId>js</artifactId>
+          <version>${graalvm.version}</version>
+        </dependency>
+      </dependencies>
+    </profile>
+  </profiles>
+
   <dependencies>
-    <dependency>
-      <groupId>org.graalvm.polyglot</groupId>
-      <artifactId>polyglot</artifactId>
-      <version>${graalvm.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.graalvm.polyglot</groupId>
-      <artifactId>js-community</artifactId>
-      <version>${graalvm.version}</version>
-      <type>pom</type>
-    </dependency>
     <dependency>
       <groupId>org.graalvm.compiler</groupId>
       <artifactId>compiler</artifactId>
