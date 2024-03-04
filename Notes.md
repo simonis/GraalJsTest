@@ -41,6 +41,34 @@
   - What's the difference between the tags `vm-ee-23.1.2`, `vm-ce-23.1.2`, `vm-23.1.2` and `graal-23.1.2` in the https://github.com/oracle/graaljs repository and which tag/branch corresponds to the GitHub release `graaljs-community-23.1.2-linux-amd64.tar.gz` and the Maven central version `23.1.2`. At least for now, all the tags seem to be identical?
   - The `-jvm` versions contain the native version of the GraalVM Compiler (i.e. `jvm/lib/libjvmcicompiler.so`) and enables it with `-XX:+EnableJVMCIProduct -XX:+UseJVMCINativeLibrary` (`EnableJVMCIProduct` means *Allow JVMCI to be used in product mode. This alters a subset of JVMCI flags to be non-experimental, defaults `UseJVMCICompiler` and `EnableJVMCI` to true and defaults `UseJVMCINativeLibrary` to true if a JVMCI native library is available*).
 
+#### Building GraalJS
+
+Building GraalJS (version `23.1.2`) along with its dependencies from source:
+```bash
+$ mkdir Graal
+$ cd Graal
+$ git clone https://github.com/graalvm/mx.git
+$ export PATH=$PWD/mx:$PATH
+$ git clone https://github.com/oracle/graal.git
+$ cd graal/compiler
+$ git checkout vm-ce-23.1.2
+$ export JAVA_HOME=/share/software/Java/corretto-17
+$ mx build
+$ cd ../truffle/
+$ mx build
+$ cd ../sdk/
+$ mx build
+$ cd ../regex/
+$ mx build
+$ cd ../../
+$ git clone https://github.com/oracle/graaljs
+$ cd graaljs/graal-js/
+$ git checkout vm-ce-23.1.2
+# dont't do 'mx sforceimports' as adviced in https://github.com/oracle/graaljs/blob/master/docs/Building.md because it will mess up your `../../graal` repo to a *strange* revision (defined in the 'imports.suites.regex' section of 'mx.graal-js/suite.py')!
+$ mx build
+```
+Notice that although GraalVM `23.1` is targeted for JDK 21 the pure Java artifacts built from the tag `vm-ce-23.1.2` of these libraries can be build (and the results can be used) with OpenJDK 17 and later.
+
 ### GraalVM Truffle
 
 - [Truffle Unchained — Portable Language Runtimes as Java Libraries](https://medium.com/graalvm/truffle-unchained-13887b77b62c). Also see [GR-43819: Split Graal-SDK into new modules: polyglot, word, collections and nativeimage](https://github.com/oracle/graal/pull/7171) and the [Changelog entry for Graal Version 23.1.0](https://github.com/oracle/graal/blob/master/sdk/CHANGELOG.md#version-2310).
@@ -62,7 +90,50 @@
 
 ### GraalVM Compiler
 
-- Run with `-XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI --upgrade-module-path <path-to-compiler.jar-module>` to enable native compilation of GraalJS/Truffle code with tha jar-based GraalVM compiler.
+- Run with `-XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI --upgrade-module-path <path-to-compiler.jar-module>` to enable native compilation of GraalJS/Truffle code with the jar-based, pure Java GraalVM compiler.
 - [graal/compiler/docs/Debugging.md](https://github.com/oracle/graal/blob/master/compiler/docs/Debugging.md) documents the option `-XX:+JVMCIPrintProperties` which can be used to print the graal compiler related command line properties like e.g. `-Dgraal.PrintCompilation=true`. Notice that starting with JDK 22, the [Graal compiler options have been moved to the `jdk.graal` prefix](https://github.com/oracle/graal/commit/6f34cc046f3b2) (e.g. )`-Djdk.graal.PrintCompilation=true`
   - Notice that `-XX:+JVMCIPrintProperties` only work son a GraalVM JDK standalone. On a standard JDK you additionally need `-XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI --upgrade-module-path compiler-23.1.2.jar --module-path word-23.1.2.jar:truffle-compiler-23.1.2.jar:collections-23.1.2.jar` in order make the Graal Compiler available (activating it with `-XX:+UseJVMCICompiler` is not required).
-- [Building Mandrel/libgraal at tag mandrel-23.1.2.0-Final with JDK 17 doesn't work](https://github.com/graalvm/mandrel/issues/688)
+
+#### Building the GraalVM compiler
+
+Building the native version (i.e. "[libgraal](https://www.graalvm.org/latest/reference-manual/java/compiler/#compiler-operating-modes)" as opposed to "jargraal" or `libjvmcicompiler.so`) of the GraalVM compiler is very sensitive to the JDK, both at build time as well as at run time. By default, building `libjvmcicompiler.so` is only supported with the so called [labs-openjdk-17](https://github.com/graalvm/labs-openjdk-17) or [labs-openjdk-21](https://github.com/graalvm/labs-openjdk-21). The labs-openjdk versions are OpenJDK forks which include support for "libgraal" and GraalVM CE. The labs-openjdk changes are significant. E.g  [the diff](https://github.com/graalvm/labs-openjdk-17/compare/jdk-17.0.9+9...jvmci-23.0-b22) between labs-openjdk at tag `jvmci-23-0-b22` and OpenJDK 17 at tag `jdk-17.0.9+9` (which it is based on) are 237 commits in 174 changed files summing up to ~13.000 changed lines of code. For labs-openjdk-21 [the diff](https://github.com/graalvm/labs-openjdk-21/compare/jdk-21.0.2+13...jvmci-23.1-b33) between the tags `jvmci-23.1-b33` and `jdk-21.0.2+13` still consists of 75 commits to 48 files which result in a total of ~2.200 lines of code. The changes are mostly to the `jdk.internal.vm.ci` JVMCI module along with the corresponding HotSpot changes but also general class library changes like [[GR-39566] An option to emit stable names for lambda classes](https://github.com/graalvm/labs-openjdk-17/commit/58906fad1bf33a1f071d931ea9a81568a76fd82e) which are required by SubstrateVM.
+
+So in order to build and use `libjvmcicompiler.so` we either have to choose the *non-standard* labs-openjdk or use the [Mandrel](https://github.com/graalvm/mandrel) fork of GraalVM. Mandrel is a downstream distribution of the GraalVM community edition targeted to provide a native-image release specifically to support [Quarkus](https://github.com/quarkusio/quarkus). In contrast to patching OpenJDK, Mandrel patches the GraalVM project in order to make it compatible with unmodified upstream OpenJDK distributions. E.g. the [diff](https://github.com/graalvm/mandrel/compare/vm-23.1.0...mandrel-23.1.0.0-Final) between `mandrel-23.1.0.0-Final` and its upstream `vm-23.1.0` is 8 commits to 18 files resulting in ~400 lines of changes. It has to be noticed though, that the Mandrel project is only officially supporting the GraalVM's native image functionality and *not* libgraal/`libjvmcicompiler.so`. The "[Building Mandrel/libgraal at tag mandrel-23.1.2.0-Final with JDK 17 doesn't work](https://github.com/graalvm/mandrel/issues/688)" issue in the Mandrel project contains more details on the compatibility between various Mandrel, GraalVM and OpenJDK versions.
+
+##### Building libgraal with Mandrel and OpenJDK
+
+While Mandrel is compatible with upstream OpenJDK, every new OpenJDK update release can introduce changes which require fixes to Mandrel (e.g. the [downport](https://github.com/openjdk/jdk17u/commit/a06047acce82f60b5ca193a7b2aa329ed24b46f4) of "[JDK-8168469: Memory leak in JceSecurity](https://bugs.openjdk.org/browse/JDK-8168469)" to JDK 17.0.10 caused a build failure in Mandrel which had to be fixed with "[[23.0] Mandrel 23.0 fails to build with JDK 17.0.10-EA](https://github.com/graalvm/mandrel/issues/607)").
+
+Mandrel as well as GraalVM requires a build JDK with static versions of the native libraries because they will be linked statically into the native image produced by the native image builder. since JDK 11, these static libraries can be created as follows:
+
+```bash
+$ git clone https://github.com/openjdk/jdk17u-dev
+$ cd jdk17u-dev
+$ git checkout jdk-17.0.10-ga
+$ configure ...
+$ make graal-builder-image
+```
+Afterwards we export the newly generated JDK with static libraries as build JDK for the Mandrel build and make the `mx` tool available on the `PATH`:
+```bash
+$ export JAVA_HOME=<path-to>/jdk17u-dev-opt/images/graal-builder-jdk
+$ export PATH=<path-to>/Graal/mx:$PATH
+```
+Finally, building "libgraal" is a matter of:
+```bash
+$ mkdir Mandrel && cd Mandrel
+$ git clone https://github.com/graalvm/mandrel
+$ cd mandrel
+$ git checkout mandrel-22.3.5.0-Final
+$ cd vm
+$ mx --env libgraal build
+...
+[libjvmcicompiler:180684] Finished generating 'libjvmcicompiler' in 34.6s.
+```
+and for `mandrel-23.1.2.0-Final` with OpenJDK 21:
+```bash
+$ export JAVA_HOME=<path-to>/jdk21u-dev-opt/images/graal-builder-jdk
+$ git checkout mandrel-23.1.2.0-Final
+$ cd vm
+$ mx --env libgraal build
+...
+```
