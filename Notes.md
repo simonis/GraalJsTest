@@ -133,7 +133,6 @@ and for `mandrel-23.1.2.0-Final` with OpenJDK 21:
 ```bash
 $ export JAVA_HOME=<path-to>/jdk21u-dev-opt/images/graal-builder-jdk
 $ git checkout mandrel-23.1.2.0-Final
-$ cd vm
 $ mx --env libgraal build
 ...
 ```

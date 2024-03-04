@@ -47,6 +47,30 @@ $ mvn dependency:tree -Dverbose
 [INFO]    \- org.graalvm.truffle:truffle-compiler:jar:23.1.2:runtime
 ```
 
+There's an alternative profile for building the older `23.0.3` version of the libraries:
+
+```bash
+$ JAVA_HOME=<path-to-jdk17+> mvn clean package -Pgraal-23-0-3
+```
+
+The dependencies are a little different here (and described in more detail in the [Truffle Unchained — Portable Language Runtimes as Java Libraries](https://medium.com/graalvm/truffle-unchained-13887b77b62c) blog):
+```bash
+$ mvn dependency:tree -Pgraal-23-0-3 -Dverbose
+[INFO] io.simonis:graal-js-test:jar:1.0-SNAPSHOT
+[INFO] +- org.graalvm.compiler:compiler:jar:23.0.3:runtime
+[INFO] |  +- (org.graalvm.sdk:graal-sdk:jar:23.0.3:runtime - omitted for duplicate)
+[INFO] |  \- org.graalvm.truffle:truffle-api:jar:23.0.3:compile
+[INFO] |     \- (org.graalvm.sdk:graal-sdk:jar:23.0.3:compile - omitted for duplicate)
+[INFO] +- org.graalvm.sdk:graal-sdk:jar:23.0.3:compile
+[INFO] \- org.graalvm.js:js:jar:23.0.3:compile
+[INFO]    +- org.graalvm.regex:regex:jar:23.0.3:compile
+[INFO]    |  +- (org.graalvm.truffle:truffle-api:jar:23.0.3:compile - omitted for duplicate)
+[INFO]    |  \- (com.ibm.icu:icu4j:jar:72.1:compile - omitted for duplicate)
+[INFO]    +- (org.graalvm.truffle:truffle-api:jar:23.0.3:compile - omitted for duplicate)
+[INFO]    +- (org.graalvm.sdk:graal-sdk:jar:23.0.3:compile - omitted for duplicate)
+[INFO]    \- com.ibm.icu:icu4j:jar:72.1:compile
+```
+
 ##### Running
 
 The following examples use the GraalJS/Truffle modules downloaded automatically by Maven during the build. See [Notes.md](./Notes.md#building-graaljs) for how to build all these dependencies from source.
@@ -142,7 +166,7 @@ The following examples use the GraalJS/Truffle modules downloaded automatically 
     ```
 #### Benchmark results
 
-The following benchmark results were taken on a [`c5.metal` EC2 instance](https://aws.amazon.com/ec2/instance-types/c5/). They display the lowest, average and highest score out of 20 Octane benchmark runs in a single `Context` (except for the "interpreted" runs which didn't use "libgraal" at all and only ran for 3 times).
+The following benchmark results were taken on a [`c5.metal` EC2 instance](https://aws.amazon.com/ec2/instance-types/c5/). They display the lowest, highest and average score out of 20 Octane benchmark runs in a single `Context` (except for the "interpreted" runs which didn't use "libgraal" at all and only ran for 3 times). They all used version `23.1.2` of the GraalVM libraries and ran with `-XX:ReservedCodeCacheSize=2g -XX:InitialCodeCacheSize=2g -XX:NonProfiledCodeHeapSize=1500m -XX:-UseCodeCacheFlushing` to make sure that insufficient CodeCache space won't affect the results. I turns out that the CodeCache usage is constantly growing with every new Octane run and never gets to a steady state (reaching about ~1gb of code in the non-profiled segment (measured by `jcmd OctaneBenchmarkRunner Compiler.codecache`) and more than 30.000 compiled methods as displayed by the output of `-Dpolyglot.engine.CompilationStatistics=true`). This behavior might be due to some dynamic code execution (i.e. using `eval()`) in the benchmark but requires more detailed analysis.
 
 | JDK | min | max | avg. |
 |--------------------|--------|---------|---------|
@@ -162,3 +186,7 @@ The following benchmark results were taken on a [`c5.metal` EC2 instance](https:
 |  graalvm21-oracle-jvmci-compiler-native  |  10329  |  14397  |  13436  |
 
 `*-jvmci` means `-XX:+EnableJVMCI`, `*-jvmci-compiler` means `-XX:+EnableJVMCI -XX:+UseJVMCICompiler`, `*-jvmci-native` means `-XX:+EnableJVMCI -XX:+UseJVMCINativeLibrary` and `*-jvmci-compiler-native` means `-XX:+EnableJVMCI -XX:+UseJVMCICompiler -XX:+UseJVMCINativeLibrary`.
+
+One interesting result is that te results which use the native "libgraal" compiler (i.e. `-XX:+UseJVMCINativeLibrary`) aren't really better than the ones which only use the "jargraal" version. I would have expected that running with "jargraal" would result in a significantly lower low score and a slightly lower average score. But a single run of the Octane suite takes about 2 minutes on a `c5.metal` instance and the host has more than enough free CPUs so the startup-up costs of JIT-compiling "jargraal" at startup might not be significant enough for this use case.
+
+Another interesting aspect is that JDK 17 seems to have higher low and average scores compared to JDK 21 and that the Oracle GraalVM version (previously known as GraalVM Enterprise Edition) doesn't seem to be significantly faster for this workload compared to the GraalVM community edition.
