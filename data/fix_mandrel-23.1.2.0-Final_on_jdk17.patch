@@ -1,0 +1,303 @@
+diff --git a/sdk/mx.sdk/mx_sdk_vm_impl.py b/sdk/mx.sdk/mx_sdk_vm_impl.py
+index 983c3873eb2..a283d127ac3 100644
+--- a/sdk/mx.sdk/mx_sdk_vm_impl.py
++++ b/sdk/mx.sdk/mx_sdk_vm_impl.py
+@@ -2384,6 +2384,8 @@ class GraalVmSVMNativeImageBuildTask(GraalVmNativeImageBuildTask):
+         ]
+         if self.subject.native_image_config.is_polyglot:
+             build_args += ["--macro:truffle", "--language:all"]
++        if mx_sdk_vm.base_jdk_version() <= 18:
++            build_args += svm_experimental_options(['-H:+UseOldMethodHandleIntrinsics'])
+         return build_args
+ 
+ 
+diff --git a/substratevm/src/com.oracle.svm.core/src/com/oracle/svm/core/jdk/JceSecurityHasInnerClassIdentityWrapper.java b/substratevm/src/com.oracle.svm.core/src/com/oracle/svm/core/jdk/JceSecurityHasInnerClassIdentityWrapper.java
+new file mode 100644
+index 00000000000..393d4700479
+--- /dev/null
++++ b/substratevm/src/com.oracle.svm.core/src/com/oracle/svm/core/jdk/JceSecurityHasInnerClassIdentityWrapper.java
+@@ -0,0 +1,41 @@
++/*
++ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
++ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
++ *
++ * This code is free software; you can redistribute it and/or modify it
++ * under the terms of the GNU General Public License version 2 only, as
++ * published by the Free Software Foundation.  Oracle designates this
++ * particular file as subject to the "Classpath" exception as provided
++ * by Oracle in the LICENSE file that accompanied this code.
++ *
++ * This code is distributed in the hope that it will be useful, but WITHOUT
++ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
++ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
++ * version 2 for more details (a copy is included in the LICENSE file that
++ * accompanied this code).
++ *
++ * You should have received a copy of the GNU General Public License version
++ * 2 along with this work; if not, write to the Free Software Foundation,
++ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
++ *
++ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
++ * or visit www.oracle.com if you need additional information or have any
++ * questions.
++ */
++package com.oracle.svm.core.jdk;
++
++import java.util.function.BooleanSupplier;
++
++public class JceSecurityHasInnerClassIdentityWrapper implements BooleanSupplier {
++
++    @Override
++    public boolean getAsBoolean() {
++        try {
++            Class.forName("javax.crypto.JceSecurity$IdentityWrapper");
++            return true;
++        } catch (ClassNotFoundException e) {
++            return false;
++        }
++    }
++
++}
+diff --git a/substratevm/src/com.oracle.svm.core/src/com/oracle/svm/core/jdk/JceSecurityHasInnerClassWeakIdentityWrapper.java b/substratevm/src/com.oracle.svm.core/src/com/oracle/svm/core/jdk/JceSecurityHasInnerClassWeakIdentityWrapper.java
+new file mode 100644
+index 00000000000..40f5e8732eb
+--- /dev/null
++++ b/substratevm/src/com.oracle.svm.core/src/com/oracle/svm/core/jdk/JceSecurityHasInnerClassWeakIdentityWrapper.java
+@@ -0,0 +1,41 @@
++/*
++ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
++ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
++ *
++ * This code is free software; you can redistribute it and/or modify it
++ * under the terms of the GNU General Public License version 2 only, as
++ * published by the Free Software Foundation.  Oracle designates this
++ * particular file as subject to the "Classpath" exception as provided
++ * by Oracle in the LICENSE file that accompanied this code.
++ *
++ * This code is distributed in the hope that it will be useful, but WITHOUT
++ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
++ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
++ * version 2 for more details (a copy is included in the LICENSE file that
++ * accompanied this code).
++ *
++ * You should have received a copy of the GNU General Public License version
++ * 2 along with this work; if not, write to the Free Software Foundation,
++ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
++ *
++ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
++ * or visit www.oracle.com if you need additional information or have any
++ * questions.
++ */
++package com.oracle.svm.core.jdk;
++
++import java.util.function.BooleanSupplier;
++
++public class JceSecurityHasInnerClassWeakIdentityWrapper implements BooleanSupplier {
++
++    @Override
++    public boolean getAsBoolean() {
++        try {
++            Class.forName("javax.crypto.JceSecurity$WeakIdentityWrapper");
++            return true;
++        } catch (ClassNotFoundException e) {
++            return false;
++        }
++    }
++
++}
+diff --git a/substratevm/src/com.oracle.svm.core/src/com/oracle/svm/core/jdk/SecuritySubstitutions.java b/substratevm/src/com.oracle.svm.core/src/com/oracle/svm/core/jdk/SecuritySubstitutions.java
+index e799ceaa26d..bbdcff9bf8b 100644
+--- a/substratevm/src/com.oracle.svm.core/src/com/oracle/svm/core/jdk/SecuritySubstitutions.java
++++ b/substratevm/src/com.oracle.svm.core/src/com/oracle/svm/core/jdk/SecuritySubstitutions.java
+@@ -1,5 +1,5 @@
+ /*
+- * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
++ * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
+  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+  *
+  * This code is free software; you can redistribute it and/or modify it
+@@ -43,9 +43,9 @@ import java.security.Provider;
+ import java.security.SecureRandom;
+ import java.util.List;
+ import java.util.Map;
++import java.util.function.BooleanSupplier;
+ import java.util.function.Predicate;
+ 
+-import org.graalvm.compiler.serviceprovider.JavaVersionUtil;
+ import org.graalvm.nativeimage.Platform;
+ import org.graalvm.nativeimage.Platforms;
+ import org.graalvm.nativeimage.hosted.FieldValueTransformer;
+@@ -187,8 +187,7 @@ final class Target_java_security_Provider_ServiceKey {
+ 
+ @TargetClass(value = java.security.Provider.class)
+ final class Target_java_security_Provider {
+-    @Alias //
+-    @RecomputeFieldValue(kind = RecomputeFieldValue.Kind.Custom, declClass = ServiceKeyComputer.class) //
++    @Alias @RecomputeFieldValue(kind = RecomputeFieldValue.Kind.Custom, declClass = ServiceKeyComputer.class) //
+     private static Target_java_security_Provider_ServiceKey previousKey;
+ }
+ 
+@@ -267,10 +266,26 @@ final class Target_javax_crypto_ProviderVerifier {
+     }
+ }
+ 
++final class QueueFieldPresent implements BooleanSupplier {
++    @Override
++    public boolean getAsBoolean() {
++        try {
++            Class<?> jceSecurity = Class.forName("javax.crypto.JceSecurity");
++            jceSecurity.getDeclaredField("queue");
++            return true;
++        } catch (ClassNotFoundException | NoSuchFieldException e) {
++            return false;
++        }
++    }
++}
++
+ @TargetClass(className = "javax.crypto.JceSecurity")
+ @SuppressWarnings({"unused"})
+ final class Target_javax_crypto_JceSecurity {
+ 
++    @Alias @TargetElement(onlyWith = QueueFieldPresent.class)//
++    public static ReferenceQueue<Object> queue;
++
+     /*
+      * The JceSecurity.verificationResults cache is initialized by the SecurityServicesFeature at
+      * build time, for all registered providers. The cache is used by JceSecurity.canUseProvider()
+@@ -294,10 +309,6 @@ final class Target_javax_crypto_JceSecurity {
+     @RecomputeFieldValue(kind = RecomputeFieldValue.Kind.Reset) //
+     private static Map<Provider, Object> verifyingProviders;
+ 
+-    @Alias //
+-    @TargetElement(onlyWith = JDK21OrLater.class) //
+-    private static ReferenceQueue<Object> queue;
+-
+     @Substitute
+     static void verifyProvider(URL codeBase, Provider p) {
+         throw VMError.shouldNotReachHere("javax.crypto.JceSecurity.verifyProviderJar(URL, Provider) is reached at runtime. " +
+@@ -312,12 +323,12 @@ final class Target_javax_crypto_JceSecurity {
+ 
+     @Substitute
+     static Exception getVerificationResult(Provider p) {
++        Object wrapper = new JceSecurityHasInnerClassWeakIdentityWrapper().getAsBoolean() ?
++            new Target_javax_crypto_JceSecurity_WeakIdentityWrapper(p, Target_javax_crypto_JceSecurity.queue) :
++            new Target_javax_crypto_JceSecurity_IdentityWrapper(p);
+         /* Start code block copied from original method. */
+         /* The verification results map key is an identity wrapper object. */
+-        Object key = JavaVersionUtil.JAVA_SPEC <= 20 ? // JDK-8168469
+-                        new Target_javax_crypto_JceSecurity_IdentityWrapper(p) : //
+-                        new Target_javax_crypto_JceSecurity_WeakIdentityWrapper(p, queue);
+-        Object o = verificationResults.get(key);
++        Object o = verificationResults.get(wrapper);
+         if (o == PROVIDER_VERIFIED) {
+             return null;
+         } else if (o != null) {
+@@ -342,20 +353,23 @@ final class Target_javax_crypto_JceSecurity {
+     }
+ }
+ 
+-@TargetClass(className = "javax.crypto.JceSecurity", innerClass = "IdentityWrapper", onlyWith = JDK20OrEarlier.class)
++@TargetClass(className = "javax.crypto.JceSecurity", innerClass = "IdentityWrapper", onlyWith = JceSecurityHasInnerClassIdentityWrapper.class)
+ @SuppressWarnings({"unused"})
+ final class Target_javax_crypto_JceSecurity_IdentityWrapper {
++    @Alias //
++    Provider obj;
++
+     @Alias //
+     Target_javax_crypto_JceSecurity_IdentityWrapper(Provider obj) {
++        this.obj = obj;
+     }
+ }
+ 
+-@TargetClass(className = "javax.crypto.JceSecurity", innerClass = "WeakIdentityWrapper", onlyWith = JDK21OrLater.class)
+-@SuppressWarnings({"unused"})
++@TargetClass(className = "javax.crypto.JceSecurity", innerClass = "WeakIdentityWrapper", onlyWith = JceSecurityHasInnerClassWeakIdentityWrapper.class)
+ final class Target_javax_crypto_JceSecurity_WeakIdentityWrapper {
+-
+     @Alias //
+     Target_javax_crypto_JceSecurity_WeakIdentityWrapper(Provider obj, ReferenceQueue<Object> queue) {
++        // Do nothing this is just an alias
+     }
+ }
+ 
+diff --git a/substratevm/src/com.oracle.svm.hosted/src/com/oracle/svm/hosted/SecurityServicesFeature.java b/substratevm/src/com.oracle.svm.hosted/src/com/oracle/svm/hosted/SecurityServicesFeature.java
+index 0a7b66da9b4..cf8bf65b5e3 100644
+--- a/substratevm/src/com.oracle.svm.hosted/src/com/oracle/svm/hosted/SecurityServicesFeature.java
++++ b/substratevm/src/com.oracle.svm.hosted/src/com/oracle/svm/hosted/SecurityServicesFeature.java
+@@ -1,5 +1,5 @@
+ /*
+- * Copyright (c) 2018, 2018, Oracle and/or its affiliates. All rights reserved.
++ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+  *
+  * This code is free software; you can redistribute it and/or modify it
+@@ -31,6 +31,7 @@ import java.io.File;
+ import java.io.FileWriter;
+ import java.io.IOException;
+ import java.io.PrintWriter;
++import java.lang.ref.Reference;
+ import java.lang.reflect.Executable;
+ import java.lang.reflect.Field;
+ import java.lang.reflect.InvocationTargetException;
+@@ -80,8 +81,8 @@ import javax.net.ssl.TrustManagerFactory;
+ import javax.security.auth.callback.CallbackHandler;
+ import javax.security.auth.login.Configuration;
+ 
++import com.oracle.svm.core.jdk.JceSecurityHasInnerClassWeakIdentityWrapper;
+ import org.graalvm.compiler.options.Option;
+-import org.graalvm.compiler.serviceprovider.JavaVersionUtil;
+ import org.graalvm.nativeimage.ImageSingletons;
+ import org.graalvm.nativeimage.hosted.RuntimeJNIAccess;
+ import org.graalvm.nativeimage.hosted.RuntimeReflection;
+@@ -832,21 +833,38 @@ public class SecurityServicesFeature extends JNIRegistrationUtil implements Inte
+     @SuppressWarnings("unchecked")
+     private Function<Object, Object> constructVerificationCacheCleaner() {
+         /*
+-         * The verification cache is an IdentityWrapper -> Verification result ConcurrentHashMap.
+-         * The IdentityWrapper contains the actual provider in the 'obj' field.
++         * For JDK 17 and later, the verification cache is an IdentityWrapper -> Verification result
++         * For JDK 17.0.10 and later, the verification cache is a WeakIdentityWrapper ->
++         * Verification result ConcurrentHashMap. The WeakIdentityWrapper contains the actual
++         * provider in the 'obj' field.
+          */
+-        String className;
+-        String fieldName;
+-        if (JavaVersionUtil.JAVA_SPEC <= 20) {
+-            className = "javax.crypto.JceSecurity$IdentityWrapper";
+-            fieldName = "obj";
+-        } else {
+-            // JDK-8168469
+-            className = "java.lang.ref.Reference";
+-            fieldName = "referent";
++        if (new JceSecurityHasInnerClassWeakIdentityWrapper().getAsBoolean()) {
++            Method getReferent = ReflectionUtil.lookupMethod(Reference.class, "get");
++            Predicate<Object> listRemovalPredicate = wrapper -> {
++                try {
++                    return shouldRemoveProvider((Provider) getReferent.invoke(wrapper));
++                } catch (IllegalAccessException | InvocationTargetException e) {
++                    throw VMError.shouldNotReachHere(e);
++                }
++            };
++
++            return obj -> {
++                Map<Object, Object> original = (Map<Object, Object>) obj;
++                Map<Object, Object> verificationResults = new ConcurrentHashMap<>(original);
++
++                verificationResults.keySet().removeIf(listRemovalPredicate);
++
++                return verificationResults;
++            };
++
+         }
+-        Class<?> identityWrapper = loader.findClassOrFail(className);
+-        Field providerField = ReflectionUtil.lookupField(identityWrapper, fieldName);
++
++        /*
++         * For JDK 17 up to 17.0.10, the verification cache is an IdentityWrapper -> Verification result
++         * ConcurrentHashMap. The IdentityWrapper contains the actual provider in the 'obj' field.
++         */
++        Class<?> identityWrapper = loader.findClassOrFail("javax.crypto.JceSecurity$IdentityWrapper");
++        Field providerField = ReflectionUtil.lookupField(identityWrapper, "obj");
+ 
+         Predicate<Object> listRemovalPredicate = wrapper -> {
+             try {

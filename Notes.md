@@ -123,7 +123,7 @@ Finally, building "libgraal" is a matter of:
 $ mkdir Mandrel && cd Mandrel
 $ git clone https://github.com/graalvm/mandrel
 $ cd mandrel
-$ git checkout mandrel-22.3.5.0-Final
+$ git checkout mandrel-23.0.3.0-Final
 $ cd vm
 $ mx --env libgraal build
 ...
@@ -135,4 +135,23 @@ $ export JAVA_HOME=<path-to>/jdk21u-dev-opt/images/graal-builder-jdk
 $ git checkout mandrel-23.1.2.0-Final
 $ mx --env libgraal build
 ...
+```
+Notice that building `mandrel-23.1.2.0-Final` with OpenJDK 17 is possible with a patch ([fix_mandrel-23.1.2.0-Final_on_jdk17.patch](./data/fix_mandrel-23.1.2.0-Final_on_jdk17.patch)):
+```bash
+$ cd ..
+$ patch -p1 < fix_mandrel-23.1.2.0-Final_on_jdk17.patch
+$ cd vm
+$ export JAVA_HOME=<path-to>/jdk17u-dev-opt/images/graal-builder-jdk
+$ mx --env libgraal build
+...
+```
+But the resulting `libjvmcicompiler.so` will not work as native compiler with JDK 17:
+```bash
+$ <path-to>/jdk17u-dev-opt/images/jdk/bin/java -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI \
+                 -XX:+UseJVMCINativeLibrary -XX:JVMCILibPath=<path-to>/libjvmcicompiler.so.image \
+                 ...
+
+Your Java runtime '17.0.10+7-LTS' with compiler version '23.1.2' is incompatible with polyglot version '23.1.2'.
+The Java runtime version must be greater or equal to JDK '21' and smaller than JDK '25'.
+Update your Java runtime to resolve this.
 ```
