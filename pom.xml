@@ -65,6 +65,12 @@
       <version>${graalvm.version}</version>
       <scope>runtime</scope>
     </dependency>
+    <dependency>
+      <groupId>org.openjdk.nashorn</groupId>
+      <artifactId>nashorn-core</artifactId>
+      <version>15.4</version>
+      <scope>runtime</scope>
+    </dependency>
   </dependencies>
 
   <build>
@@ -83,8 +89,9 @@
             <configuration>
 	      <outputDirectory>${project.build.directory}/js-deps</outputDirectory>
 	      <excludeTypes>pom</excludeTypes>
-	      <excludeGrouIds>org.graalvm.compiler</excludeGrouIds>
-	      <excludeArtifactIds>compiler</excludeArtifactIds>
+	      <excludeGrouIds>org.ow2.asm,org.graalvm.compiler</excludeGrouIds>
+              <!-- Unfortunately <excludeGrouIds> doesn't work, so we have to explicitely list all artifact ids -->
+	      <excludeArtifactIds>compiler,asm,asm-commons,asm-tree,asm-util,asm-analysis</excludeArtifactIds>
             </configuration>
           </execution>
           <execution>
@@ -97,6 +104,19 @@
 	      <outputDirectory>${project.build.directory}/compiler-deps</outputDirectory>
 	      <includeGrouIds>org.graalvm.compiler</includeGrouIds>
 	      <includeArtifactIds>compiler</includeArtifactIds>
+            </configuration>
+          </execution>
+          <execution>
+            <id>nashorn-dependencies</id>
+            <phase>package</phase>
+            <goals>
+              <goal>copy-dependencies</goal>
+            </goals>
+            <configuration>
+	      <outputDirectory>${project.build.directory}/nashorn-deps</outputDirectory>
+	      <includeGrouIds>org.openjdk.nashorn,org.ow2.asm</includeGrouIds>
+              <!-- Unfortunately <includeGrouIds> doesn't work, so we have to explicitely list all artifact ids -->
+	      <includeArtifactIds>nashorn-core,asm,asm-commons,asm-tree,asm-util,asm-analysis</includeArtifactIds>
             </configuration>
           </execution>
         </executions>
