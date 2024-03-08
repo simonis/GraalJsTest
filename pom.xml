@@ -91,7 +91,7 @@
 	      <excludeTypes>pom</excludeTypes>
 	      <excludeGrouIds>org.ow2.asm,org.graalvm.compiler</excludeGrouIds>
               <!-- Unfortunately <excludeGrouIds> doesn't work, so we have to explicitely list all artifact ids -->
-	      <excludeArtifactIds>compiler,asm,asm-commons,asm-tree,asm-util,asm-analysis</excludeArtifactIds>
+	      <excludeArtifactIds>compiler,nashorn-core,asm,asm-commons,asm-tree,asm-util,asm-analysis</excludeArtifactIds>
             </configuration>
           </execution>
           <execution>

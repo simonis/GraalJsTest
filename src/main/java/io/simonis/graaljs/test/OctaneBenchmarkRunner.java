@@ -21,6 +21,9 @@ public class OctaneBenchmarkRunner {
 
   public static void main(String[] args) throws Exception {
 
+    // Want to see the actual runtime but don't want to make it a compile-time dependency.
+    System.out.println(Class.forName("com.oracle.truffle.api.Truffle").getMethod("getRuntime").invoke(null));
+
     URL octaneUrl = OctaneBenchmarkRunner.class.getClassLoader().getResource(OCTANE);
     String[] octaneUrlParts = octaneUrl.toString().split("!");
     FileSystem fs;
