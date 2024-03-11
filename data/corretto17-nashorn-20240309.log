@@ -1,0 +1,509 @@
+openjdk version "17.0.10" 2024-01-16 LTS
+OpenJDK Runtime Environment Corretto-17.0.10.7.1 (build 17.0.10+7-LTS)
+OpenJDK 64-Bit Server VM Corretto-17.0.10.7.1 (build 17.0.10+7-LTS, mixed mode, sharing)
+Richards: 6081
+DeltaBlue: 8802
+Crypto: 5264
+RayTrace: 15337
+EarleyBoyer: 12681
+RegExp: 1313
+Splay: 13614
+SplayLatency: 24252
+NavierStokes: 3240
+PdfJS: 7744
+Mandreel: Skipped
+Gameboy: 12284
+CodeLoad: 1408
+Box2D: 4825
+zlib: 526
+Typescript: 10295
+----
+Score (version 9): 4487
+
+
+Richards: 6362
+DeltaBlue: 9183
+Crypto: 5141
+RayTrace: 14378
+EarleyBoyer: 7542
+RegExp: 1396
+Splay: 12979
+SplayLatency: 23793
+NavierStokes: 3132
+PdfJS: 7591
+Mandreel: Skipped
+Gameboy: 11996
+CodeLoad: 1619
+Box2D: 7161
+zlib: 474
+Typescript: 10161
+----
+Score (version 9): 4434
+
+
+Richards: 6529
+DeltaBlue: 9177
+Crypto: 5069
+RayTrace: 14364
+EarleyBoyer: 7845
+RegExp: 1473
+Splay: 13964
+SplayLatency: 37651
+NavierStokes: 3405
+PdfJS: 8127
+Mandreel: Skipped
+Gameboy: 12758
+CodeLoad: 1476
+Box2D: 7605
+zlib: 474
+Typescript: 9917
+----
+Score (version 9): 4660
+
+
+Richards: 6434
+DeltaBlue: 9146
+Crypto: 4933
+RayTrace: 14406
+EarleyBoyer: 7878
+RegExp: 1482
+Splay: 13947
+SplayLatency: 37719
+NavierStokes: 3439
+PdfJS: 8350
+Mandreel: Skipped
+Gameboy: 13125
+CodeLoad: 1539
+Box2D: 7796
+zlib: 474
+Typescript: 10395
+----
+Score (version 9): 4703
+
+
+Richards: 6540
+DeltaBlue: 9140
+Crypto: 5017
+RayTrace: 14387
+EarleyBoyer: 7858
+RegExp: 1503
+Splay: 13981
+SplayLatency: 37056
+NavierStokes: 3435
+PdfJS: 8394
+Mandreel: Skipped
+Gameboy: 13190
+CodeLoad: 1517
+Box2D: 8063
+zlib: 473
+Typescript: 10450
+----
+Score (version 9): 4720
+
+
+Richards: 6555
+DeltaBlue: 9143
+Crypto: 5008
+RayTrace: 14736
+EarleyBoyer: 7850
+RegExp: 1502
+Splay: 13981
+SplayLatency: 36435
+NavierStokes: 3416
+PdfJS: 8437
+Mandreel: Skipped
+Gameboy: 13046
+CodeLoad: 1479
+Box2D: 8047
+zlib: 476
+Typescript: 10564
+----
+Score (version 9): 4715
+
+
+Richards: 6530
+DeltaBlue: 9154
+Crypto: 4996
+RayTrace: 14741
+EarleyBoyer: 7857
+RegExp: 1498
+Splay: 13729
+SplayLatency: 36600
+NavierStokes: 3430
+PdfJS: 8529
+Mandreel: Skipped
+Gameboy: 13227
+CodeLoad: 1445
+Box2D: 7908
+zlib: 523
+Typescript: 12840
+----
+Score (version 9): 4792
+
+
+Richards: 6542
+DeltaBlue: 9227
+Crypto: 5022
+RayTrace: 14844
+EarleyBoyer: 7934
+RegExp: 1502
+Splay: 13896
+SplayLatency: 36323
+NavierStokes: 2957
+PdfJS: 8461
+Mandreel: Skipped
+Gameboy: 13217
+CodeLoad: 1611
+Box2D: 8656
+zlib: 525
+Typescript: 12184
+----
+Score (version 9): 4801
+
+
+Richards: 6546
+DeltaBlue: 8899
+Crypto: 5040
+RayTrace: 14884
+EarleyBoyer: 7951
+RegExp: 1506
+Splay: 13696
+SplayLatency: 36762
+NavierStokes: 2942
+PdfJS: 8614
+Mandreel: Skipped
+Gameboy: 13395
+CodeLoad: 1676
+Box2D: 7178
+zlib: 526
+Typescript: 12758
+----
+Score (version 9): 4771
+
+
+Richards: 6560
+DeltaBlue: 9233
+Crypto: 5056
+RayTrace: 14929
+EarleyBoyer: 7959
+RegExp: 1526
+Splay: 13913
+SplayLatency: 36406
+NavierStokes: 2994
+PdfJS: 8645
+Mandreel: Skipped
+Gameboy: 13118
+CodeLoad: 1667
+Box2D: 8598
+zlib: 526
+Typescript: 12656
+----
+Score (version 9): 4841
+
+
+Richards: 6560
+DeltaBlue: 9227
+Crypto: 5048
+RayTrace: 14894
+EarleyBoyer: 7952
+RegExp: 1523
+Splay: 14085
+SplayLatency: 37943
+NavierStokes: 2988
+PdfJS: 8700
+Mandreel: Skipped
+Gameboy: 13544
+CodeLoad: 1587
+Box2D: 8644
+zlib: 526
+Typescript: 12414
+----
+Score (version 9): 4847
+
+
+Richards: 6557
+DeltaBlue: 8894
+Crypto: 5036
+RayTrace: 14552
+EarleyBoyer: 7752
+RegExp: 1500
+Splay: 13174
+SplayLatency: 35731
+NavierStokes: 2979
+PdfJS: 8785
+Mandreel: Skipped
+Gameboy: 13138
+CodeLoad: 1726
+Box2D: 8538
+zlib: 527
+Typescript: 12853
+----
+Score (version 9): 4803
+
+
+Richards: 6543
+DeltaBlue: 9195
+Crypto: 5055
+RayTrace: 14909
+EarleyBoyer: 7921
+RegExp: 1515
+Splay: 14085
+SplayLatency: 36348
+NavierStokes: 2986
+PdfJS: 8862
+Mandreel: Skipped
+Gameboy: 13499
+CodeLoad: 1649
+Box2D: 8105
+zlib: 528
+Typescript: 12464
+----
+Score (version 9): 4829
+
+
+Richards: 6545
+DeltaBlue: 9143
+Crypto: 5051
+RayTrace: 14884
+EarleyBoyer: 7916
+RegExp: 1514
+Splay: 14033
+SplayLatency: 37833
+NavierStokes: 2991
+PdfJS: 8911
+Mandreel: Skipped
+Gameboy: 13134
+CodeLoad: 1738
+Box2D: 8373
+zlib: 528
+Typescript: 12733
+----
+Score (version 9): 4864
+
+
+Richards: 6548
+DeltaBlue: 9177
+Crypto: 5044
+RayTrace: 14909
+EarleyBoyer: 7907
+RegExp: 1514
+Splay: 14016
+SplayLatency: 37854
+NavierStokes: 3036
+PdfJS: 8885
+Mandreel: Skipped
+Gameboy: 13144
+CodeLoad: 1508
+Box2D: 8596
+zlib: 528
+Typescript: 12700
+----
+Score (version 9): 4832
+
+
+Richards: 6549
+DeltaBlue: 9195
+Crypto: 5052
+RayTrace: 14909
+EarleyBoyer: 7933
+RegExp: 1497
+Splay: 13762
+SplayLatency: 37076
+NavierStokes: 3453
+PdfJS: 8911
+Mandreel: Skipped
+Gameboy: 13485
+CodeLoad: 1741
+Box2D: 8408
+zlib: 527
+Typescript: 12480
+----
+Score (version 9): 4898
+
+
+Richards: 6554
+DeltaBlue: 9215
+Crypto: 5061
+RayTrace: 14909
+EarleyBoyer: 7920
+RegExp: 1507
+Splay: 14033
+SplayLatency: 37865
+NavierStokes: 3420
+PdfJS: 8908
+Mandreel: Skipped
+Gameboy: 13204
+CodeLoad: 1566
+Box2D: 8571
+zlib: 527
+Typescript: 12875
+----
+Score (version 9): 4887
+
+
+Richards: 6533
+DeltaBlue: 9203
+Crypto: 5029
+RayTrace: 14899
+EarleyBoyer: 7910
+RegExp: 1491
+Splay: 14016
+SplayLatency: 37844
+NavierStokes: 3446
+PdfJS: 8914
+Mandreel: Skipped
+Gameboy: 13141
+CodeLoad: 1698
+Box2D: 8365
+zlib: 525
+Typescript: 12371
+----
+Score (version 9): 4885
+
+
+Richards: 6539
+DeltaBlue: 9169
+Crypto: 5035
+RayTrace: 14894
+EarleyBoyer: 7881
+RegExp: 1512
+Splay: 13829
+SplayLatency: 36275
+NavierStokes: 3448
+PdfJS: 8917
+Mandreel: Skipped
+Gameboy: 13144
+CodeLoad: 1650
+Box2D: 7221
+zlib: 522
+Typescript: 11999
+----
+Score (version 9): 4806
+
+
+Richards: 6548
+DeltaBlue: 9140
+Crypto: 5013
+RayTrace: 14162
+EarleyBoyer: 7767
+RegExp: 1432
+Splay: 13438
+SplayLatency: 33618
+NavierStokes: 3085
+PdfJS: 8353
+Mandreel: Skipped
+Gameboy: 13412
+CodeLoad: 1671
+Box2D: 7836
+zlib: 527
+Typescript: 12391
+----
+Score (version 9): 4732
+
+
+
+Individual compiler times (for compiled methods only)
+------------------------------------------------
+
+  C1 {speed: 109996.715 bytes/s; standard: 26.563 s, 2928756 bytes, 24005 methods; osr:  0.641 s, 63538 bytes, 89 methods; nmethods_size: 194774240 bytes; nmethods_code_size: 151069792 bytes}
+  C2 {speed: 28412.959 bytes/s; standard: 617.667 s, 18733561 bytes, 10784 methods; osr: 119.115 s, 2200585 bytes, 252 methods; nmethods_size: 122290824 bytes; nmethods_code_size: 68456480 bytes}
+
+Individual compilation Tier times (for compiled methods only)
+------------------------------------------------
+
+  Tier1 {speed: 122708.446 bytes/s; standard:  0.043 s, 5220 bytes, 715 methods; osr:  0.000 s, 0 bytes, 0 methods; nmethods_size: 242656 bytes; nmethods_code_size: 173760 bytes}
+  Tier2 {speed: 118406.197 bytes/s; standard:  0.206 s, 24408 bytes, 55 methods; osr:  0.000 s, 0 bytes, 0 methods; nmethods_size: 517784 bytes; nmethods_code_size: 277920 bytes}
+  Tier3 {speed: 109912.341 bytes/s; standard: 26.314 s, 2899128 bytes, 23235 methods; osr:  0.641 s, 63538 bytes, 89 methods; nmethods_size: 194013800 bytes; nmethods_code_size: 150618112 bytes}
+  Tier4 {speed: 28412.959 bytes/s; standard: 617.667 s, 18733561 bytes, 10784 methods; osr: 119.115 s, 2200585 bytes, 252 methods; nmethods_size: 122290824 bytes; nmethods_code_size: 68456480 bytes}
+
+Accumulated compiler times
+----------------------------------------------------------
+  Total compilation time   : 811.371 s
+    Standard compilation   : 644.230 s, Average : 0.019 s
+    Bailed out compilation :  47.386 s, Average : 0.133 s
+    On stack replacement   : 119.755 s, Average : 0.351 s
+    Invalidated            :   0.000 s, Average : 0.000 s
+
+    C1 Compile Time:       52.968 s
+       Setup time:            0.043 s
+       Build HIR:            35.232 s
+         Parse:                13.680 s
+         Optimize blocks:       0.010 s
+         GVN:                   3.646 s
+         Null checks elim:     16.203 s
+         Range checks elim:     0.255 s
+         Other:                 1.439 s
+       Emit LIR:             10.532 s
+         LIR Gen:               3.609 s
+         Linear Scan:           6.845 s
+         Other:                 0.079 s
+       Code Emission:         2.874 s
+       Code Installation:     3.909 s
+       Other:                 0.377 s
+
+    C2 Compile Time:      758.063 s
+       Parse:                33.108 s
+       Optimize:            252.153 s
+         Escape Analysis:       5.311 s
+           Conn Graph:            4.281 s
+           Macro Eliminate:       1.018 s
+         GVN 1:                 8.144 s
+         Incremental Inline:   79.762 s
+           IdealLoop:             2.703 s
+          (IGVN:                 33.406 s)
+          (Inline:               41.068 s)
+          (Prune Useless:        13.131 s)
+           Other:                77.059 s
+         Vector:                0.000 s
+           Box elimination:     0.000 s
+             IGVN:              0.000 s
+             Prune Useless:     0.000 s
+         Renumber Live:         2.779 s
+         IdealLoop:           108.203 s
+         IdealLoop Verify:      0.000 s
+         Cond Const Prop:       2.113 s
+         GVN 2:                 0.674 s
+         Macro Expand:          6.914 s
+         Barrier Expand:        0.001 s
+         Graph Reshape:         3.061 s
+         Other:                35.189 s
+       Matcher:                   51.747 s
+         Post Selection Cleanup:   0.664 s
+       Scheduler:                 32.725 s
+       Regalloc:            364.317 s
+         Ctor Chaitin:          0.109 s
+         Build IFG (virt):      2.598 s
+         Build IFG (phys):     40.138 s
+         Compute Liveness:     59.708 s
+         Regalloc Split:       46.217 s
+         Postalloc Copy Rem:   20.855 s
+         Merge multidefs:       2.688 s
+         Fixup Spills:          0.408 s
+         Compact:               0.191 s
+         Coalesce 1:           32.825 s
+         Coalesce 2:          110.780 s
+         Coalesce 3:            9.795 s
+         Cache LRG:             0.424 s
+         Simplify:             16.076 s
+         Select:               14.448 s
+         Other:                 7.056 s
+       Block Ordering:        2.772 s
+       Peephole:              0.378 s
+       Code Emission:          19.738 s
+         Insn Scheduling:       0.000 s
+         Shorten branches:      2.316 s
+         Build OOP maps:        6.395 s
+         Fill buffer:           7.061 s
+         Code Installation:     2.834 s
+         Other:                 1.133 s
+
+  Total compiled methods    :    35130 methods
+    Standard compilation    :    34789 methods
+    On stack replacement    :      341 methods
+  Total compiled bytecodes  : 23926440 bytes
+    Standard compilation    : 21662317 bytes
+    On stack replacement    :  2264123 bytes
+  Average compilation speed :    29488 bytes/s
+
+  nmethod code size         : 219526272 bytes
+  nmethod total size        : 317065064 bytes

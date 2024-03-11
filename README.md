@@ -174,6 +174,8 @@ The following benchmark results were taken on a [`c5.metal` EC2 instance](https:
 |--------------------|--------|---------|---------|
 |  corretto17  |  653  |  692  |  669  |
 |  corretto21  |  663  |  701  |  680  |
+|  corretto17-nashorn  |  4434  |  4898  |  4765  |
+|  corretto21-nashorn  |  4215  |  4870  |  4739  |
 |  corretto17-jvmci  |  12561  |  14300  |  13716  |
 |  corretto17-jvmci-compiler  |  12240  |  14806  |  13882  |
 |  corretto21-jvmci  |  9479  |  14100  |  12671  |
@@ -205,7 +207,7 @@ Thread[JVMCI CompilerThread2,9,system]: Compilation of java.util.zip.ZipFile$Sou
 
 One interesting outcome is that the results which use the native "libgraal" compiler (i.e. `-XX:+UseJVMCINativeLibrary`) aren't really better than the ones which only use the "jargraal" version. I would have expected that running with "jargraal" would result in a significantly lower low score and a slightly lower average score. But a single run of the Octane suite takes about 2 minutes on a `c5.metal` instance and the host has more than enough free CPUs so the startup-up costs of JIT-compiling "jargraal" at startup might not be significant enough for this use case.
 
-Another interesting aspect is that JDK 17 seems to have considerable better low scores compared to JDK 21 (even compared to the Oracle GraalVM version) and these numbers get confirmed by the JDK 17 benchmarks with GraalVM version `23.0.3` in the next section. Oracle GraalVM [graalvm21-oracle-*](https://download.oracle.com/graalvm/21/latest/graalvm-jdk-21_linux-x64_bin.tar.gz) (previously known as GraalVM Enterprise Edition) has ~10% better maximum and average scores for this workload compared to the GraalVM community edition [graalvm21-*](https://github.com/graalvm/graalvm-ce-builds/releases/download/jdk-21.0.2/graalvm-community-jdk-21.0.2_linux-x64_bin.tar.gz).
+Another interesting aspect is that JDK 17 seems to have considerable better low scores compared to JDK 21 (even compared to the Oracle GraalVM version) and these numbers get confirmed by the JDK 17 benchmarks with GraalVM version `23.0.3` in the next section. Oracle GraalVM [graalvm21-oracle-*](https://download.oracle.com/graalvm/21/latest/graalvm-jdk-21_linux-x64_bin.tar.gz) (previously known as GraalVM Enterprise Edition) has ~10% better maximum and average scores for this workload compared to the GraalVM community edition [graalvm21-*](https://github.com/graalvm/graalvm-ce-builds/releases/download/jdk-21.0.2/graalvm-community-jdk-21.0.2_linux-x64_bin.tar.gz). Finally, [Nashorn](https://github.com/openjdk/nashorn), although not actively developed since JDK 15, is still almost an order of magnitude faster than GraalJS without JVMCI support and reaches about one third of the GraalJS top performance.
 
 ##### Graal version 23.0.2/23.0.3
 
@@ -225,7 +227,7 @@ Installing new component: TRegex (org.graalvm.regex, version 23.0.2)
 Installing new component: ICU4J (org.graalvm.icu4j, version 23.0.2)
 Installing new component: Graal.js (org.graalvm.js, version 23.0.2)
 ```
-I couldn't manage to run the benchmarks with graalvm-community-jdk-17.0.9 and the `23.0.3` version of the libraries I built, so the `graalvm17-*` runs are with the builtin Graal libraries at version 23.0.2 and the `corretto17-*` runs with the libraries at version `23.0.3` as downloaded from Maven Central (see [pom.xml](./pom.xml)).
+I couldn't manage to run the benchmarks with graalvm-community-jdk-17.0.9 and the `23.0.3` version of the libraries I built (or downloaded from MavenCentral), so the `graalvm17-*` runs are with the builtin Graal libraries at version 23.0.2 and the `corretto17-*` runs with the libraries at version `23.0.3` as downloaded from Maven Central (see [pom.xml](./pom.xml)).
 
 The numbers are similar to the JDK 17 numbers with `23.1.2` with a single exception. The native version `20.0.3` of the compiler ("libgraal") build from the Mandrel project (see [Notes.md](./Notes.md#building-libgraal-with-mandrel-and-openjdk)) with OpenJDK 17 performs very poor compared to the pure-Java ("jargraal") version of the compiler. The reason isn't currently clear to me, but I suspect that the graalvm-community-jdk-17.0.9 edition (which is based on the [GraalVM labs-openjdk-17](https://github.com/graalvm/labs-openjdk-17)) contains JVMCI changes which are not in OpenJDK 17 and which are required in order to reach peak performance.
 

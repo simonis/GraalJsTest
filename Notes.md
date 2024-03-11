@@ -92,7 +92,7 @@ Notice that although GraalVM `23.1` is targeted for JDK 21 the pure Java artifac
 
 - Run with `-XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI --upgrade-module-path <path-to-compiler.jar-module>` to enable native compilation of GraalJS/Truffle code with the jar-based, pure Java GraalVM compiler.
 - [graal/compiler/docs/Debugging.md](https://github.com/oracle/graal/blob/master/compiler/docs/Debugging.md) documents the option `-XX:+JVMCIPrintProperties` which can be used to print the graal compiler related command line properties like e.g. `-Dgraal.PrintCompilation=true`. Notice that starting with JDK 22, the [Graal compiler options have been moved to the `jdk.graal` prefix](https://github.com/oracle/graal/commit/6f34cc046f3b2) (e.g. )`-Djdk.graal.PrintCompilation=true`
-  - Notice that `-XX:+JVMCIPrintProperties` only work son a GraalVM JDK standalone. On a standard JDK you additionally need `-XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI --upgrade-module-path compiler-23.1.2.jar --module-path word-23.1.2.jar:truffle-compiler-23.1.2.jar:collections-23.1.2.jar` in order make the Graal Compiler available (activating it with `-XX:+UseJVMCICompiler` is not required).
+  - Notice that `-XX:+JVMCIPrintProperties` only works on a GraalVM JDK standalone. On a standard JDK you additionally need `-XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI --upgrade-module-path compiler-23.1.2.jar --module-path word-23.1.2.jar:truffle-compiler-23.1.2.jar:collections-23.1.2.jar` in order make the Graal Compiler available (activating it with `-XX:+UseJVMCICompiler` is not required).
 
 #### Building the GraalVM compiler
 

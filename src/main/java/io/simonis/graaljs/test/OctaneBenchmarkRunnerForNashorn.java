@@ -73,7 +73,9 @@ public class OctaneBenchmarkRunnerForNashorn {
                                  world = null;
                                }
                                """));
-    benchmarks.append(Files.readString(octanePath.resolve("zlib.js")));
+    benchmarks.append(Files.readString(octanePath.resolve("zlib.js"))
+                      // Make 'zlib' reentrant
+                      .replaceFirst("(?s)function tearDownZlib\\(\\) \\{.+\\}", "function tearDownZlib() {}"));
     benchmarks.append(Files.readString(octanePath.resolve("zlib-data.js")));
     benchmarks.append(Files.readString(octanePath.resolve("typescript.js"))
                       // Make 'Typescript' reentrant

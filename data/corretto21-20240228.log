@@ -1,0 +1,74 @@
+[To redirect Truffle log output to a file use one of the following options:
+* '--log.file=<path>' if the option is passed using a guest language launcher.
+* '-Dpolyglot.log.file=<path>' if the option is passed using the host Java launcher.
+* Configure logging using the polyglot embedding API.]
+[engine] WARNING: The polyglot engine uses a fallback runtime that does not support runtime compilation to native code.
+Execution without runtime compilation will negatively impact the guest application performance.
+The following cause was found: JVMCI is not enabled for this JVM. Enable JVMCI using -XX:+EnableJVMCI.
+For more information see: https://www.graalvm.org/latest/reference-manual/embed-languages/#runtime-optimization-support.
+To disable this warning use the '--engine.WarnInterpreterOnly=false' option or the '-Dpolyglot.engine.WarnInterpreterOnly=false' system property.
+Richards: 192
+DeltaBlue: 203
+Crypto: 304
+RayTrace: 507
+EarleyBoyer: 460
+RegExp: 150
+Splay: 1514
+SplayLatency: 5248
+NavierStokes: 472
+PdfJS: 1449
+Mandreel: Skipped
+Gameboy: 1654
+CodeLoad: 9811
+Box2D: 840
+zlib: 422
+Typescript: 2641
+----
+Score (version 9): 701
+
+
+Richards: 174
+DeltaBlue: 197
+Crypto: 298
+RayTrace: 504
+EarleyBoyer: 434
+RegExp: 145
+Splay: 1435
+SplayLatency: 5033
+NavierStokes: 408
+PdfJS: 1394
+Mandreel: Skipped
+Gameboy: 1645
+CodeLoad: 10044
+Box2D: 785
+zlib: 412
+Typescript: 2635
+----
+Score (version 9): 676
+
+
+Richards: 173
+DeltaBlue: 195
+Crypto: 286
+RayTrace: 497
+EarleyBoyer: 436
+RegExp: 149
+Splay: 1471
+SplayLatency: 4814
+NavierStokes: 376
+PdfJS: 1266
+Mandreel: Skipped
+Gameboy: 1569
+CodeLoad: 10531
+Box2D: 851
+zlib: 403
+Typescript: 2336
+----
+Score (version 9): 663
+
+
+Richards: 170
+DeltaBlue: 194
+Crypto: 289
+RayTrace: 480
+EarleyBoyer: 443

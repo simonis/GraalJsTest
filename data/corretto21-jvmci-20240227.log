@@ -1,0 +1,511 @@
+Richards: 11898
+DeltaBlue: 13762
+Crypto: 24516
+RayTrace: 26256
+EarleyBoyer: 20261
+RegExp: 1048
+Splay: 18052
+SplayLatency: 2855
+NavierStokes: 29879
+PdfJS: 22968
+Mandreel: Skipped
+Gameboy: 56656
+CodeLoad: 6391
+Box2D: 14932
+zlib: 27978
+Typescript: 23434
+----
+Score (version 9): 10666
+
+
+Richards: 11815
+DeltaBlue: 7648
+Crypto: 20590
+RayTrace: 28645
+EarleyBoyer: 12832
+RegExp: 950
+Splay: 15031
+SplayLatency: 17024
+NavierStokes: 10027
+PdfJS: 21716
+Mandreel: Skipped
+Gameboy: 56352
+CodeLoad: 6234
+Box2D: 18875
+zlib: 28394
+Typescript: 21871
+----
+Score (version 9): 10253
+
+
+Richards: 12026
+DeltaBlue: 6650
+Crypto: 20489
+RayTrace: 27594
+EarleyBoyer: 15901
+RegExp: 893
+Splay: 17579
+SplayLatency: 12895
+NavierStokes: 27091
+PdfJS: 7803
+Mandreel: Skipped
+Gameboy: 58289
+CodeLoad: 6393
+Box2D: 20579
+zlib: 28473
+Typescript: 36713
+----
+Score (version 9): 10580
+
+
+Richards: 11100
+DeltaBlue: 12754
+Crypto: 22187
+RayTrace: 28571
+EarleyBoyer: 16847
+RegExp: 1046
+Splay: 16852
+SplayLatency: 12210
+NavierStokes: 28508
+PdfJS: 25741
+Mandreel: Skipped
+Gameboy: 59342
+CodeLoad: 8151
+Box2D: 20683
+zlib: 20419
+Typescript: 36213
+----
+Score (version 9): 11966
+
+
+Richards: 12602
+DeltaBlue: 6850
+Crypto: 22089
+RayTrace: 29210
+EarleyBoyer: 17689
+RegExp: 1936
+Splay: 4664
+SplayLatency: 891
+NavierStokes: 27036
+PdfJS: 23661
+Mandreel: Skipped
+Gameboy: 54997
+CodeLoad: 7058
+Box2D: 20644
+zlib: 27435
+Typescript: 38118
+----
+Score (version 9): 9479
+
+
+Richards: 11801
+DeltaBlue: 6950
+Crypto: 22010
+RayTrace: 29858
+EarleyBoyer: 17460
+RegExp: 2007
+Splay: 18080
+SplayLatency: 40809
+NavierStokes: 28118
+PdfJS: 25525
+Mandreel: Skipped
+Gameboy: 59409
+CodeLoad: 9892
+Box2D: 20736
+zlib: 29085
+Typescript: 38336
+----
+Score (version 9): 13593
+
+
+Richards: 12461
+DeltaBlue: 12970
+Crypto: 22216
+RayTrace: 29979
+EarleyBoyer: 22188
+RegExp: 2257
+Splay: 19469
+SplayLatency: 44365
+NavierStokes: 28538
+PdfJS: 9303
+Mandreel: Skipped
+Gameboy: 59208
+CodeLoad: 9857
+Box2D: 20657
+zlib: 29074
+Typescript: 39684
+----
+Score (version 9): 13795
+
+
+Richards: 12499
+DeltaBlue: 13052
+Crypto: 22235
+RayTrace: 29919
+EarleyBoyer: 16829
+RegExp: 2518
+Splay: 20192
+SplayLatency: 1214
+NavierStokes: 28600
+PdfJS: 25878
+Mandreel: Skipped
+Gameboy: 58096
+CodeLoad: 7510
+Box2D: 20644
+zlib: 27308
+Typescript: 36295
+----
+Score (version 9): 11337
+
+
+Richards: 12016
+DeltaBlue: 12810
+Crypto: 21944
+RayTrace: 27732
+EarleyBoyer: 20622
+RegExp: 2540
+Splay: 18581
+SplayLatency: 43818
+NavierStokes: 26317
+PdfJS: 23055
+Mandreel: Skipped
+Gameboy: 54484
+CodeLoad: 9507
+Box2D: 19074
+zlib: 27669
+Typescript: 26597
+----
+Score (version 9): 13816
+
+
+Richards: 12329
+DeltaBlue: 12616
+Crypto: 20674
+RayTrace: 27872
+EarleyBoyer: 17602
+RegExp: 2019
+Splay: 17445
+SplayLatency: 42114
+NavierStokes: 26421
+PdfJS: 23569
+Mandreel: Skipped
+Gameboy: 55992
+CodeLoad: 8878
+Box2D: 20259
+zlib: 27549
+Typescript: 36080
+----
+Score (version 9): 13654
+
+
+Richards: 11668
+DeltaBlue: 12051
+Crypto: 21146
+RayTrace: 15778
+EarleyBoyer: 21319
+RegExp: 2210
+Splay: 18109
+SplayLatency: 42980
+NavierStokes: 26500
+PdfJS: 24796
+Mandreel: Skipped
+Gameboy: 57336
+CodeLoad: 9441
+Box2D: 20709
+zlib: 27143
+Typescript: 37903
+----
+Score (version 9): 13558
+
+
+Richards: 12429
+DeltaBlue: 8794
+Crypto: 22601
+RayTrace: 29899
+EarleyBoyer: 18118
+RegExp: 2151
+Splay: 18167
+SplayLatency: 43251
+NavierStokes: 27174
+PdfJS: 25260
+Mandreel: Skipped
+Gameboy: 56963
+CodeLoad: 9163
+Box2D: 19566
+zlib: 27534
+Typescript: 29098
+----
+Score (version 9): 13536
+
+
+Richards: 12597
+DeltaBlue: 13069
+Crypto: 22914
+RayTrace: 28172
+EarleyBoyer: 18233
+RegExp: 2419
+Splay: 17688
+SplayLatency: 43149
+NavierStokes: 26927
+PdfJS: 24035
+Mandreel: Skipped
+Gameboy: 58679
+CodeLoad: 8488
+Box2D: 19018
+zlib: 27090
+Typescript: 38417
+----
+Score (version 9): 14041
+
+
+Richards: 11654
+DeltaBlue: 12427
+Crypto: 22735
+RayTrace: 18317
+EarleyBoyer: 21736
+RegExp: 2380
+Splay: 18920
+SplayLatency: 44008
+NavierStokes: 28357
+PdfJS: 22376
+Mandreel: Skipped
+Gameboy: 55054
+CodeLoad: 8015
+Box2D: 20488
+zlib: 27308
+Typescript: 38348
+----
+Score (version 9): 13711
+
+
+Richards: 12062
+DeltaBlue: 8195
+Crypto: 22226
+RayTrace: 29482
+EarleyBoyer: 18475
+RegExp: 2333
+Splay: 19370
+SplayLatency: 44150
+NavierStokes: 28357
+PdfJS: 25392
+Mandreel: Skipped
+Gameboy: 55578
+CodeLoad: 9069
+Box2D: 20335
+zlib: 27435
+Typescript: 37044
+----
+Score (version 9): 13830
+
+
+Richards: 12537
+DeltaBlue: 12867
+Crypto: 22641
+RayTrace: 16263
+EarleyBoyer: 20836
+RegExp: 2528
+Splay: 19502
+SplayLatency: 44530
+NavierStokes: 26111
+PdfJS: 13359
+Mandreel: Skipped
+Gameboy: 55873
+CodeLoad: 8339
+Box2D: 10927
+zlib: 27157
+Typescript: 36389
+----
+Score (version 9): 12732
+
+
+Richards: 12334
+DeltaBlue: 12561
+Crypto: 22599
+RayTrace: 28119
+EarleyBoyer: 18880
+RegExp: 2462
+Splay: 19078
+SplayLatency: 44243
+NavierStokes: 27369
+PdfJS: 25026
+Mandreel: Skipped
+Gameboy: 59342
+CodeLoad: 10782
+Box2D: 18200
+zlib: 21657
+Typescript: 35786
+----
+Score (version 9): 14081
+
+
+Richards: 11696
+DeltaBlue: 12152
+Crypto: 20249
+RayTrace: 16710
+EarleyBoyer: 21534
+RegExp: 2431
+Splay: 19046
+SplayLatency: 44079
+NavierStokes: 27912
+PdfJS: 24872
+Mandreel: Skipped
+Gameboy: 53980
+CodeLoad: 10505
+Box2D: 19368
+zlib: 27896
+Typescript: 36926
+----
+Score (version 9): 13764
+
+
+Richards: 12230
+DeltaBlue: 12890
+Crypto: 22517
+RayTrace: 17724
+EarleyBoyer: 17628
+RegExp: 2385
+Splay: 8401
+SplayLatency: 2103
+NavierStokes: 28148
+PdfJS: 25155
+Mandreel: Skipped
+Gameboy: 58811
+CodeLoad: 10838
+Box2D: 19186
+zlib: 27367
+Typescript: 37646
+----
+Score (version 9): 10933
+
+
+Richards: 12467
+DeltaBlue: 12721
+Crypto: 22458
+RayTrace: 29501
+EarleyBoyer: 17504
+RegExp: 1731
+Splay: 18983
+SplayLatency: 43713
+NavierStokes: 27971
+PdfJS: 25339
+Mandreel: Skipped
+Gameboy: 58419
+CodeLoad: 10465
+Box2D: 19438
+zlib: 27815
+Typescript: 39427
+----
+Score (version 9): 14100
+
+
+[To redirect Truffle log output to a file use one of the following options:
+* '--log.file=<path>' if the option is passed using a guest language launcher.
+* '-Dpolyglot.log.file=<path>' if the option is passed using the host Java launcher.
+* Configure logging using the polyglot embedding API.]
+[engine] Truffle runtime statistics for engine 1
+    Compilations                : 29196
+      Success                   : 28555
+      Temporary Bailouts        : 641
+        org.graalvm.compiler.core.common.CancellationBailoutException: Compilation cancelled.: 465
+        org.graalvm.compiler.core.common.RetryableBailoutException: Assumption invalidated while compiling code: Object[OptimizedAssumption:Assumption(invalid, name=Profiled Argument Types)]: 129
+        org.graalvm.compiler.core.common.RetryableBailoutException: Assumption invalidated while compiling code: Object[OptimizedAssumption:Assumption(invalid, name=nodeRewritingAssumption)]: 16
+        org.graalvm.compiler.core.common.RetryableBailoutException: Assumption invalidated while compiling code: Object[OptimizedAssumption:Assumption(invalid, name=validRootAssumption)]: 15
+        org.graalvm.compiler.core.common.RetryableBailoutException: Assumption invalidated while compiling code: Object[OptimizedAssumption:Assumption(invalid, name=Profiled Return Type)]: 10
+        jdk.vm.ci.code.BailoutException: Speculation failed: GuardMovement@2[HotSpotMethod<OptimizedOSRLoopNode.execute(VirtualFrame)>, 206, NullCheckException]: 3
+        jdk.vm.ci.code.BailoutException: Speculation failed: GuardMovement@2[HotSpotMethod<OptimizedOSRLoopNode.execute(VirtualFrame)>, 206, TransferToInterpreter]: 1
+        jdk.vm.ci.code.BailoutException: Code installation failed: dependencies failed
+Failed dependency of type abstract_with_unique_concrete_subtype
+  context = *com.oracle.truffle.js.builtins.ArrayPrototypeBuiltins$BasicArrayOperation
+  class   = com.oracle.truffle.js.builtins.ArrayPrototypeBuiltinsFactory$JSArrayPushNodeGen
+  witness = com.oracle.truffle.js.builtins.ArrayPrototypeBuiltinsFactory$JSArrayIndexOfNodeGen
+: 1
+        jdk.vm.ci.code.BailoutException: Speculation failed: GuardMovement@2[HotSpotMethod<TRegexDFAExecutorNode.execute(VirtualFrame, TRegexExecutorLocals, TruffleString$CodeRange)>, 264, TransferToInterpreter]: 1
+      Permanent Bailouts        : 1
+        org.graalvm.compiler.truffle.compiler.GraphTooBigBailoutException: Graph too big to safely compile. Node count: 112670. Graph Size: 150002. Limit: 150000.: 1
+      Failed                    : 0
+      Interrupted               : -1
+    Invalidated                 : 830
+        validRootAssumption Split call node: 407
+        Profiled Argument Types : 276
+        Profiled Return Type    : 122
+        validRootAssumption OSR compilation got invalidated: 12
+        nodeRewritingAssumption : 11
+        validRootAssumption OSR compilation failed or cancelled: 2
+    Queues                      : 29847
+    Dequeues                    : 1746
+        Target inlined into only caller: 1447
+        validRootAssumption Split call node: 158
+        Split call node         : 85
+        Profiled Argument Types : 43
+        Profiled Return Type    : 12
+        Partial blocks installed: 1
+    Splits                      : 319364
+    Compilation Accuracy        : 0.971571
+    Queue Accuracy              : 0.941502
+    Compilation Utilization     : 3.564370
+    Remaining Compilation Queue : 0
+    Time to queue               : count=29845, sum=2619235266660, min=       0, average= 87761275.48, max=1608401722, maxTarget=AstWalker.walk <split-50839>
+    Time waiting in queue       : count=29182, sum=44403014389, min=      -3, average=  1521589.14, max=39526667, maxTarget=RegExp.prototype.get global
+  ---------------------------   :
+  AST node statistics           :
+    Truffle node count          : count=29038, sum=  10887789, min=       1, average=      374.95, max=   23949, maxTarget=a1
+      Trivial                   : count=29038, sum=   4046791, min=       0, average=      139.36, max=   10304, maxTarget=a1
+      Non Trivial               : count=29038, sum=   6840998, min=       0, average=      235.59, max=   13658, maxTarget=a1
+        Monomorphic             : count=29038, sum=   6606007, min=       0, average=      227.50, max=   13190, maxTarget=a1
+        Polymorphic             : count=29038, sum=    124010, min=       0, average=        4.27, max=     147, maxTarget=L.SolvePositionConstraints
+        Megamorphic             : count=29038, sum=    110981, min=       0, average=        3.82, max=     428, maxTarget=a1
+    Truffle call count          : count=29038, sum=    151078, min=       0, average=        5.20, max=     225, maxTarget=runBlock11<Partial-0-range:0:225>
+      Indirect                  : count=29038, sum=      2231, min=       0, average=        0.08, max=      12, maxTarget=walkListChildren <split-50838>
+      Direct                    : count=29038, sum=    148847, min=       0, average=        5.13, max=     225, maxTarget=runBlock11<Partial-0-range:0:225>
+        Dispatched              : count=29038, sum=     92741, min=       0, average=        3.19, max=     225, maxTarget=runBlock11<Partial-0-range:0:225>
+        Inlined                 : count=29038, sum=     56106, min=       0, average=        1.93, max=      65, maxTarget=ga
+        ----------              :
+        Cloned                  : count=29038, sum=         0, min=       0, average=        0.00, max=       0, maxTarget=Math.random
+        Not Cloned              : count=29038, sum=    149939, min=       0, average=        5.16, max=     417, maxTarget=runBlock11
+    Truffle loops               : count=29038, sum=     32746, min=       0, average=        1.13, max=      47, maxTarget=a1
+  ---------------------------   :
+  Compilation Tier 1            :
+    Compilation Rate            :     65750.91 bytes/second
+      Truffle Tier Rate         :    152820.62 bytes/second
+      Graal Tier Rate           :    348305.71 bytes/second
+      Installation Rate         :    178561.61 bytes/second
+    Time for compilation (us)   : count=20621, sum=3382559107, min=    1209, average=   164034.68, max= 9780352, maxTarget=a1
+      Truffle Tier (us)         : count=20397, sum=1455342485, min=     432, average=    71350.81, max= 3831788, maxTarget=a1
+      Graal Tier (us)           : count=20397, sum= 638537734, min=     538, average=    31305.47, max= 5492218, maxTarget=a1
+      Code Installation (us)    : count=20397, sum=1245543987, min=     136, average=    61065.06, max= 2494735, maxTarget=ba
+    Graal node count            :
+      After Truffle Tier        : count=20573, sum=  18486168, min=      64, average=      898.56, max=   35353, maxTarget=runBlock11<Partial-0-range:0:225>
+      After Graal Tier          : count=20546, sum=  42473005, min=      87, average=     2067.22, max=   93107, maxTarget=Parser.parseStatement
+    Graal compilation result    :
+      Code size                 : count=20397, sum= 222406337, min=     486, average=    10903.87, max=  517422, maxTarget=a1
+      Total frame size          : count=20397, sum=   5302640, min=      32, average=      259.97, max=   13920, maxTarget=a1
+      Exception handlers        : count=20397, sum=    109708, min=       1, average=        5.38, max=     226, maxTarget=runBlock11<Partial-0-range:0:225>
+      Infopoints                : count=20397, sum=   3285513, min=       8, average=      161.08, max=    9875, maxTarget=runBlock11<Partial-0-range:0:225>
+        CALL                    : count=20397, sum=   2548971, min=       8, average=      124.97, max=    6137, maxTarget=runBlock11<Partial-0-range:0:225>
+        IMPLICIT_EXCEPTION      : count=20397, sum=    709237, min=       0, average=       34.77, max=    3738, maxTarget=runBlock11<Partial-0-range:0:225>
+        SAFEPOINT               : count=20397, sum=     27305, min=       0, average=        1.34, max=     464, maxTarget=tregex /(?:ZFVR.(\d+\.\d+))|(?:(?:Sversbk|TenaCnenqvfb|Vprjrnfry).(\d+\.\d+))|(?:Bcren.(\d+\.\d+))|(?:NccyrJroXvg.(\d+(?:\.\d+)?))/ dfa ASCII: /(?:ZFVR.(\d+\.\d+))|(?:(?:Sve...
+    Marks                       : count=20397, sum=    279693, min=       7, average=       13.71, max=     472, maxTarget=tregex /(?:ZFVR.(\d+\.\d+))|(?:(?:Sversbk|TenaCnenqvfb|Vprjrnfry).(\d+\.\d+))|(?:Bcren.(\d+\.\d+))|(?:NccyrJroXvg.(\d+(?:\.\d+)?))/ dfa ASCII: /(?:ZFVR.(\d+\.\d+))|(?:(?:Sve...
+    Data references             : count=20397, sum=   1618487, min=       2, average=       79.35, max=    3103, maxTarget=Parser.parseStatement
+  ---------------------------   :
+  Compilation Tier 2            :
+    Compilation Rate            :     57665.94 bytes/second
+      Truffle Tier Rate         :    147662.63 bytes/second
+      Graal Tier Rate           :    159801.29 bytes/second
+      Installation Rate         :    310950.76 bytes/second
+    Time for compilation (us)   : count=8576, sum=3064992682, min=     927, average=   357391.87, max= 8886432, maxTarget=runBlock11<Partial-0-range:0:225>
+      Truffle Tier (us)         : count=8158, sum=1196956183, min=     262, average=   146721.77, max= 4331321, maxTarget=a1
+      Graal Tier (us)           : count=8158, sum=1106034249, min=     296, average=   135576.64, max= 6055136, maxTarget=runBlock11<Partial-0-range:0:225>
+      Code Installation (us)    : count=8158, sum= 568404139, min=     177, average=    69674.45, max= 2608792, maxTarget=walkCallExpressionChildren <split-50546>
+    Graal node count            :
+      After Truffle Tier        : count=8465, sum=  20743208, min=       6, average=     2450.47, max=   32408, maxTarget=a1
+      After Graal Tier          : count=8185, sum=  35466626, min=       5, average=     4333.12, max=   73902, maxTarget=walkFuncDeclChildren
+    Graal compilation result    :
+      Code size                 : count=8158, sum= 176745698, min=     123, average=    21665.32, max=  306598, maxTarget=runBlock11<Partial-0-range:0:225>
+      Total frame size          : count=8158, sum=   2187088, min=      32, average=      268.09, max=    6016, maxTarget=a1
+      Exception handlers        : count=8158, sum=     53301, min=       0, average=        6.53, max=     238, maxTarget=walkListChildren <split-50838>
+      Infopoints                : count=8158, sum=   2052369, min=       5, average=      251.58, max=    5741, maxTarget=runBlock11<Partial-0-range:0:225>
+        CALL                    : count=8158, sum=   1370229, min=       5, average=      167.96, max=    3447, maxTarget=runBlock11<Partial-0-range:0:225>
+        IMPLICIT_EXCEPTION      : count=8158, sum=    650416, min=       0, average=       79.73, max=    2294, maxTarget=runBlock11<Partial-0-range:0:225>
+        SAFEPOINT               : count=8158, sum=     31724, min=       0, average=        3.89, max=     433, maxTarget=Exec <split-3512>
+    Marks                       : count=8158, sum=    142111, min=       6, average=       17.42, max=     442, maxTarget=Exec <split-3512>
+    Data references             : count=8158, sum=   1315614, min=       0, average=      161.27, max=    3102, maxTarget=AstWalker.walk <split-50211>
