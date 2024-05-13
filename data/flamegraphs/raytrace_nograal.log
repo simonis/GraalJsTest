@@ -1,0 +1,136 @@
+[INFO] cstack=vm is an experimental option, use with care
+[WARN] Kernel symbols are unavailable due to restrictions. Try
+  sysctl kernel.perf_event_paranoid=1
+  sysctl kernel.kptr_restrict=0
+Profiling started
+com.oracle.truffle.api.impl.DefaultTruffleRuntime@71318ec4
+[engine] WARNING: The polyglot engine uses a fallback runtime that does not support runtime compilation to native code.
+Execution without runtime compilation will negatively impact the guest application performance.
+The following cause was found: JVMCI is not enabled for this JVM. Enable JVMCI using -XX:+EnableJVMCI.
+For more information see: https://www.graalvm.org/latest/reference-manual/embed-languages/#runtime-optimization-support.
+To disable this warning use the '--engine.WarnInterpreterOnly=false' option or the '-Dpolyglot.engine.WarnInterpreterOnly=false' system property.
+RayTrace: 565
+----
+Score (version 9): 565
+
+
+
+Individual compiler times (for compiled methods only)
+------------------------------------------------
+
+  C1 {speed: 430770,854 bytes/s; standard:  0,722 s, 310947 bytes, 3191 methods; osr:  0,002 s, 991 bytes, 1 methods; nmethods_size: 7664736 bytes; nmethods_code_size: 4614504 bytes}
+  C2 {speed: 110109,462 bytes/s; standard:  2,701 s, 297741 bytes, 776 methods; osr:  0,014 s, 1239 bytes, 3 methods; nmethods_size: 2558520 bytes; nmethods_code_size: 971720 bytes}
+
+Individual compilation Tier times (for compiled methods only)
+------------------------------------------------
+
+  Tier1 {speed: 103790,907 bytes/s; standard:  0,017 s, 1717 bytes, 376 methods; osr:  0,000 s, 0 bytes, 0 methods; nmethods_size: 102568 bytes; nmethods_code_size: 55928 bytes}
+  Tier2 {speed:  0,000 bytes/s; standard:  0,000 s, 0 bytes, 0 methods; osr:  0,000 s, 0 bytes, 0 methods; nmethods_size: 0 bytes; nmethods_code_size: 0 bytes}
+  Tier3 {speed: 438415,311 bytes/s; standard:  0,706 s, 309230 bytes, 2815 methods; osr:  0,002 s, 991 bytes, 1 methods; nmethods_size: 7562168 bytes; nmethods_code_size: 4558576 bytes}
+  Tier4 {speed: 110109,462 bytes/s; standard:  2,701 s, 297741 bytes, 776 methods; osr:  0,014 s, 1239 bytes, 3 methods; nmethods_size: 2558520 bytes; nmethods_code_size: 971720 bytes}
+
+Accumulated compiler times
+----------------------------------------------------------
+  Total compilation time   :   3,439 s
+    Standard compilation   :   3,423 s, Average : 0,001 s
+    Bailed out compilation :   0,000 s, Average : 0,000 s
+    On stack replacement   :   0,016 s, Average : 0,004 s
+    Invalidated            :   0,000 s, Average : 0,000 s
+
+    C1 Compile Time:        0,722 s
+       Setup time:            0,002 s
+       Build HIR:             0,273 s
+         Parse:                 0,210 s
+         Optimize blocks:       0,001 s
+         GVN:                   0,024 s
+         Null checks elim:      0,015 s
+         Range checks elim:     0,003 s
+         Other:                 0,021 s
+       Emit LIR:              0,259 s
+         LIR Gen:               0,049 s
+         Linear Scan:           0,207 s
+         Other:                 0,003 s
+       Code Emission:         0,101 s
+       Code Installation:     0,067 s
+       Other:                 0,019 s
+
+    C2 Compile Time:        2,714 s
+       Parse:                 0,538 s
+       Optimize:              0,740 s
+         Escape Analysis:       0,019 s
+           Conn Graph:            0,016 s
+           Macro Eliminate:       0,002 s
+         GVN 1:                 0,101 s
+         Incremental Inline:    0,001 s
+           IdealLoop:             0,000 s
+          (IGVN:                  0,006 s)
+          (Inline:                0,000 s)
+          (Prune Useless:         0,006 s)
+           Other:                 0,001 s
+         Vector:                0,000 s
+           Box elimination:     0,000 s
+             IGVN:              0,000 s
+             Prune Useless:     0,000 s
+         Renumber Live:         0,008 s
+         IdealLoop:             0,405 s
+         IdealLoop Verify:      0,000 s
+         Cond Const Prop:       0,025 s
+         GVN 2:                 0,009 s
+         Macro Expand:          0,034 s
+         Barrier Expand:        0,000 s
+         Graph Reshape:         0,020 s
+         Other:                 0,119 s
+       Matcher:                    0,160 s
+         Post Selection Cleanup:   0,012 s
+       Scheduler:                  0,179 s
+       Regalloc:              0,894 s
+         Ctor Chaitin:          0,001 s
+         Build IFG (virt):      0,014 s
+         Build IFG (phys):      0,176 s
+         Compute Liveness:      0,241 s
+         Regalloc Split:        0,097 s
+         Postalloc Copy Rem:    0,186 s
+         Merge multidefs:       0,016 s
+         Fixup Spills:          0,002 s
+         Compact:               0,002 s
+         Coalesce 1:            0,028 s
+         Coalesce 2:            0,011 s
+         Coalesce 3:            0,010 s
+         Cache LRG:             0,003 s
+         Simplify:              0,039 s
+         Select:                0,049 s
+         Other:                 0,022 s
+       Block Ordering:        0,013 s
+       Peephole:              0,002 s
+       Code Emission:           0,174 s
+         Insn Scheduling:       0,000 s
+         Shorten branches:      0,027 s
+         Build OOP maps:        0,049 s
+         Fill buffer:           0,066 s
+         Code Installation:     0,024 s
+         Other:                 0,008 s
+
+  Total compiled methods    :     3971 methods
+    Standard compilation    :     3967 methods
+    On stack replacement    :        4 methods
+  Total compiled bytecodes  :   610918 bytes
+    Standard compilation    :   608688 bytes
+    On stack replacement    :     2230 bytes
+  Average compilation speed :   177621 bytes/s
+
+  nmethod code size         :  5586224 bytes
+  nmethod total size        : 10223256 bytes
+CodeHeap 'non-profiled nmethods': size=120036Kb used=3504Kb max_used=3504Kb free=116531Kb
+ bounds [0x00007fffdf8c7000, 0x00007fffdfc37000, 0x00007fffe6e00000]
+CodeHeap 'profiled nmethods': size=120032Kb used=9240Kb max_used=9240Kb free=110791Kb
+ bounds [0x00007fffd7e00000, 0x00007fffd8710000, 0x00007fffdf338000]
+CodeHeap 'non-nmethods': size=5692Kb used=1430Kb max_used=1460Kb free=4261Kb
+ bounds [0x00007fffdf338000, 0x00007fffdf5a8000, 0x00007fffdf8c7000]
+ total_blobs=4911 nmethods=4155 adapters=663
+ compilation: enabled
+              stopped_count=0, restarted_count=0
+ full_count=0
+
+real	2m40,144s
+user	2m39,055s
+sys	0m0,818s

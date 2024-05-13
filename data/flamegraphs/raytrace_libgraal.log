@@ -1,0 +1,221 @@
+[INFO] cstack=vm is an experimental option, use with care
+[WARN] Kernel symbols are unavailable due to restrictions. Try
+  sysctl kernel.perf_event_paranoid=1
+  sysctl kernel.kptr_restrict=0
+Profiling started
+com.oracle.truffle.runtime.hotspot.HotSpotTruffleRuntime@1a38c59b
+RayTrace: 22413
+----
+Score (version 9): 22413
+
+
+[engine] Truffle runtime statistics for engine 1
+    Compilations                : 263
+      Success                   : 258
+      Temporary Bailouts        : 2
+        org.graalvm.compiler.core.common.CancellationBailoutException: Compilation cancelled.: 2
+      Permanent Bailouts        : 0
+      Failed                    : 0
+      Interrupted               : 3
+    Invalidated                 : 2
+        Profiled Argument Types : 2
+    Queues                      : 328
+    Dequeues                    : 46
+        Target inlined into only caller: 46
+    Splits                      : 156
+    Compilation Accuracy        : 0.992395
+    Queue Accuracy              : 0.859756
+    Compilation Utilization     : 2.435822
+    Remaining Compilation Queue : 21
+    Time to queue               : count= 328, sum= 803176455, min=     311, average=  2448708.71, max= 7482726, maxTarget=Array.prototype.push
+    Time waiting in queue       : count= 263, sum= 301362908, min=      45, average=  1145866.57, max= 4110154, maxTarget=setPixel
+  ---------------------------   :
+  AST node statistics           :
+    Truffle node count          : count= 259, sum=     33694, min=       1, average=      130.09, max=    2682, maxTarget=rayTrace
+      Trivial                   : count= 259, sum=     12193, min=       1, average=       47.08, max=    1039, maxTarget=renderScene
+      Non Trivial               : count= 259, sum=     21501, min=       0, average=       83.02, max=    1653, maxTarget=rayTrace
+        Monomorphic             : count= 259, sum=     20562, min=       0, average=       79.39, max=    1581, maxTarget=rayTrace
+        Polymorphic             : count= 259, sum=       939, min=       0, average=        3.63, max=      79, maxTarget=getRay
+        Megamorphic             : count= 259, sum=         0, min=       0, average=        0.00, max=       0, maxTarget=dot
+    Truffle call count          : count= 259, sum=       908, min=       0, average=        3.51, max=      76, maxTarget=renderScene
+      Indirect                  : count= 259, sum=         0, min=       0, average=        0.00, max=       0, maxTarget=dot
+      Direct                    : count= 259, sum=       908, min=       0, average=        3.51, max=      76, maxTarget=renderScene
+        Dispatched              : count= 259, sum=       458, min=       0, average=        1.77, max=      40, maxTarget=renderScene
+        Inlined                 : count= 259, sum=       450, min=       0, average=        1.74, max=      50, maxTarget=testIntersection
+        ----------              :
+        Cloned                  : count= 259, sum=         0, min=       0, average=        0.00, max=       0, maxTarget=dot
+        Not Cloned              : count= 259, sum=       911, min=       0, average=        3.52, max=      76, maxTarget=renderScene
+    Truffle loops               : count= 259, sum=        17, min=       0, average=        0.07, max=       4, maxTarget=renderScene
+  ---------------------------   :
+  Compilation Tier 1            :
+    Compilation Rate            :    107565.47 bytes/second
+      Truffle Tier Rate         :    186219.06 bytes/second
+      Graal Tier Rate           :    291458.13 bytes/second
+      Installation Rate         :   2017676.76 bytes/second
+    Time for compilation (us)   : count= 206, sum=   6637315, min=    3244, average=    32219.98, max=  737903, maxTarget=rayTrace
+      Truffle Tier (us)         : count= 206, sum=   3833904, min=    2231, average=    18611.18, max=  269112, maxTarget=rayTrace
+      Graal Tier (us)           : count= 206, sum=   2449566, min=     880, average=    11891.10, max=  424776, maxTarget=rayTrace
+      Code Installation (us)    : count= 206, sum=    353845, min=     132, average=     1717.70, max=   48673, maxTarget=rayTrace
+    Graal node count            :
+      After Truffle Tier        : count= 207, sum=     66530, min=      86, average=      321.40, max=    4156, maxTarget=rayTrace
+      After Graal Tier          : count= 206, sum=    148967, min=     105, average=      723.14, max=   11090, maxTarget=rayTrace
+    Graal compilation result    :
+      Code size                 : count= 206, sum=    713946, min=     486, average=     3465.76, max=   58620, maxTarget=rayTrace
+      Total frame size          : count= 206, sum=     19584, min=      32, average=       95.07, max=    1184, maxTarget=rayTrace
+      Exception handlers        : count= 206, sum=       549, min=       1, average=        2.67, max=      36, maxTarget=renderScene
+      Infopoints                : count= 206, sum=     12259, min=       8, average=       59.51, max=    1025, maxTarget=rayTrace
+        CALL                    : count= 206, sum=      9307, min=       8, average=       45.18, max=     733, maxTarget=rayTrace
+        IMPLICIT_EXCEPTION      : count= 206, sum=      2923, min=       0, average=       14.19, max=     291, maxTarget=rayTrace
+        SAFEPOINT               : count= 206, sum=        29, min=       0, average=        0.14, max=       7, maxTarget=String.prototype.split
+    Marks                       : count= 206, sum=      2020, min=       8, average=        9.81, max=      43, maxTarget=renderScene
+    Data references             : count= 206, sum=      6619, min=       3, average=       32.13, max=     671, maxTarget=rayTrace
+  ---------------------------   :
+  Compilation Tier 2            :
+    Compilation Rate            :     48531.70 bytes/second
+      Truffle Tier Rate         :    107005.71 bytes/second
+      Graal Tier Rate           :     97976.82 bytes/second
+      Installation Rate         :   1040787.83 bytes/second
+    Time for compilation (us)   : count=  54, sum=  10852453, min=    4562, average=   200971.35, max= 2049011, maxTarget=testIntersection
+      Truffle Tier (us)         : count=  52, sum=   4922055, min=    2107, average=    94654.91, max=  587955, maxTarget=getPixelColor
+      Graal Tier (us)           : count=  52, sum=   5375638, min=    1514, average=   103377.67, max= 1368809, maxTarget=testIntersection
+      Code Installation (us)    : count=  52, sum=    506047, min=     238, average=     9731.68, max=  143765, maxTarget=testIntersection
+    Graal node count            :
+      After Truffle Tier        : count=  53, sum=     69297, min=      53, average=     1307.49, max=    8375, maxTarget=renderScene
+      After Graal Tier          : count=  52, sum=    100366, min=     101, average=     1930.12, max=   18339, maxTarget=testIntersection
+    Graal compilation result    :
+      Code size                 : count=  52, sum=    526688, min=     448, average=    10128.62, max=  112838, maxTarget=testIntersection
+      Total frame size          : count=  52, sum=      6096, min=      32, average=      117.23, max=     992, maxTarget=rayTrace
+      Exception handlers        : count=  52, sum=       118, min=       0, average=        2.27, max=      41, maxTarget=rayTrace
+      Infopoints                : count=  52, sum=      7759, min=       9, average=      149.21, max=    1461, maxTarget=WhileNode$WhileDoRepeatingNode@11d4862a octane_custom.js:1105~ 'rayTrace'<OSR>
+        CALL                    : count=  52, sum=      5039, min=       8, average=       96.90, max=     916, maxTarget=WhileNode$WhileDoRepeatingNode@11d4862a octane_custom.js:1105~ 'rayTrace'<OSR>
+        IMPLICIT_EXCEPTION      : count=  52, sum=      2714, min=       1, average=       52.19, max=     544, maxTarget=WhileNode$WhileDoRepeatingNode@11d4862a octane_custom.js:1105~ 'rayTrace'<OSR>
+        SAFEPOINT               : count=  52, sum=         6, min=       0, average=        0.12, max=       2, maxTarget=Math.pow
+    Marks                       : count=  52, sum=       488, min=       7, average=        9.38, max=      49, maxTarget=rayTrace
+    Data references             : count=  52, sum=      6258, min=       3, average=      120.35, max=    1246, maxTarget=testIntersection
+
+Individual compiler times (for compiled methods only)
+------------------------------------------------
+
+  C1 {speed: 350694,398 bytes/s; standard:  1,087 s, 380845 bytes, 3977 methods; osr:  0,004 s, 1640 bytes, 2 methods; nmethods_size: 9665232 bytes; nmethods_code_size: 5770768 bytes}
+  C2 {speed: 86727,771 bytes/s; standard:  3,112 s, 271085 bytes, 810 methods; osr:  0,053 s, 3434 bytes, 5 methods; nmethods_size: 2290864 bytes; nmethods_code_size: 879864 bytes}
+
+Individual compilation Tier times (for compiled methods only)
+------------------------------------------------
+
+  Tier1 {speed: 99274,957 bytes/s; standard:  0,022 s, 2219 bytes, 480 methods; osr:  0,000 s, 0 bytes, 0 methods; nmethods_size: 131144 bytes; nmethods_code_size: 71432 bytes}
+  Tier2 {speed: 517335,473 bytes/s; standard:  0,001 s, 601 bytes, 3 methods; osr:  0,000 s, 0 bytes, 0 methods; nmethods_size: 8104 bytes; nmethods_code_size: 3248 bytes}
+  Tier3 {speed: 355779,175 bytes/s; standard:  1,063 s, 378025 bytes, 3494 methods; osr:  0,004 s, 1640 bytes, 2 methods; nmethods_size: 9525984 bytes; nmethods_code_size: 5696088 bytes}
+  Tier4 {speed: 86727,771 bytes/s; standard:  3,112 s, 271085 bytes, 810 methods; osr:  0,053 s, 3434 bytes, 5 methods; nmethods_size: 2290864 bytes; nmethods_code_size: 879864 bytes}
+
+Accumulated compiler times
+----------------------------------------------------------
+  Total compilation time   :   4,256 s
+    Standard compilation   :   4,199 s, Average : 0,001 s
+    Bailed out compilation :   0,000 s, Average : 0,000 s
+    On stack replacement   :   0,057 s, Average : 0,008 s
+    Invalidated            :   0,000 s, Average : 0,000 s
+
+    C1 Compile Time:        1,087 s
+       Setup time:            0,003 s
+       Build HIR:             0,413 s
+         Parse:                 0,317 s
+         Optimize blocks:       0,001 s
+         GVN:                   0,037 s
+         Null checks elim:      0,023 s
+         Range checks elim:     0,004 s
+         Other:                 0,031 s
+       Emit LIR:              0,387 s
+         LIR Gen:               0,075 s
+         Linear Scan:           0,309 s
+         Other:                 0,004 s
+       Code Emission:         0,157 s
+       Code Installation:     0,099 s
+       Other:                 0,028 s
+
+    C2 Compile Time:        3,162 s
+       Parse:                 0,622 s
+       Optimize:              0,902 s
+         Escape Analysis:       0,023 s
+           Conn Graph:            0,018 s
+           Macro Eliminate:       0,004 s
+         GVN 1:                 0,118 s
+         Incremental Inline:    0,000 s
+           IdealLoop:             0,000 s
+          (IGVN:                  0,004 s)
+          (Inline:                0,000 s)
+          (Prune Useless:         0,004 s)
+           Other:                 0,000 s
+         Vector:                0,000 s
+           Box elimination:     0,000 s
+             IGVN:              0,000 s
+             Prune Useless:     0,000 s
+         Renumber Live:         0,009 s
+         IdealLoop:             0,513 s
+         IdealLoop Verify:      0,000 s
+         Cond Const Prop:       0,029 s
+         GVN 2:                 0,010 s
+         Macro Expand:          0,038 s
+         Barrier Expand:        0,000 s
+         Graph Reshape:         0,022 s
+         Other:                 0,139 s
+       Matcher:                    0,191 s
+         Post Selection Cleanup:   0,015 s
+       Scheduler:                  0,206 s
+       Regalloc:              1,007 s
+         Ctor Chaitin:          0,001 s
+         Build IFG (virt):      0,016 s
+         Build IFG (phys):      0,199 s
+         Compute Liveness:      0,276 s
+         Regalloc Split:        0,116 s
+         Postalloc Copy Rem:    0,202 s
+         Merge multidefs:       0,019 s
+         Fixup Spills:          0,003 s
+         Compact:               0,002 s
+         Coalesce 1:            0,033 s
+         Coalesce 2:            0,013 s
+         Coalesce 3:            0,012 s
+         Cache LRG:             0,003 s
+         Simplify:              0,041 s
+         Select:                0,052 s
+         Other:                 0,021 s
+       Block Ordering:        0,015 s
+       Peephole:              0,003 s
+       Code Emission:           0,201 s
+         Insn Scheduling:       0,000 s
+         Shorten branches:      0,032 s
+         Build OOP maps:        0,055 s
+         Fill buffer:           0,073 s
+         Code Installation:     0,029 s
+         Other:                 0,011 s
+
+    JVMCI CompileBroker Time:
+       Compile:          0,000 s
+       Install Code:     0,000 s (installs: 0, CodeBlob total size: 0, CodeBlob code size: 0)
+
+    JVMCI Hosted Time:
+       Install Code:     0,798 s (installs: 272, CodeBlob total size: 3259944, CodeBlob code size: 1272176)
+
+  Total compiled methods    :     4794 methods
+    Standard compilation    :     4787 methods
+    On stack replacement    :        7 methods
+  Total compiled bytecodes  :   657004 bytes
+    Standard compilation    :   651930 bytes
+    On stack replacement    :     5074 bytes
+  Average compilation speed :   154373 bytes/s
+
+  nmethod code size         :  6650632 bytes
+  nmethod total size        : 11956096 bytes
+CodeHeap 'non-profiled nmethods': size=120036Kb used=6572Kb max_used=6572Kb free=113463Kb
+ bounds [0x00007fffdf8c7000, 0x00007fffdff37000, 0x00007fffe6e00000]
+CodeHeap 'profiled nmethods': size=120032Kb used=11628Kb max_used=11628Kb free=108404Kb
+ bounds [0x00007fffd7e00000, 0x00007fffd8960000, 0x00007fffdf338000]
+CodeHeap 'non-nmethods': size=5692Kb used=1470Kb max_used=1585Kb free=4222Kb
+ bounds [0x00007fffdf338000, 0x00007fffdf5a8000, 0x00007fffdf8c7000]
+ total_blobs=6132 nmethods=5334 adapters=699
+ compilation: enabled
+              stopped_count=0, restarted_count=0
+ full_count=0
+
+real	0m10,991s
+user	0m30,760s
+sys	0m0,895s
