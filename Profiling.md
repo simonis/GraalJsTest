@@ -3,7 +3,15 @@
 Running the [Octane](https://github.com/chromium/octane) `raytrace.js` benchmark without the GraalVM compiler:
 
 ```
-$ time java -agentpath:/share/software/Java/async-profiler-3.0-linux-x64/lib/libasyncProfiler.so=start,event=cpu,cstack=vm,ann,file=raytrace_nograal.html -Xbatch -XX:+UseSerialGC -XX:CICompilerCount=2 -XX:+PrintCodeCache -XX:-UseCodeCacheFlushing -XX:-MethodFlushing -XX:-PrintCompilation -XX:+UnlockDiagnosticVMOptions -XX:-PrintInlining -XX:+CITime --module-path target/js-deps --add-modules org.graalvm.polyglot -cp target/graal-js-test-1.0-SNAPSHOT.jar -XX:+UnlockExperimentalVMOptions -XX:-EnableJVMCI --upgrade-module-path target/compiler-deps io.simonis.graaljs.test.OctaneBenchmarkRunner raytrace.js
+$ time java -agentpath:libasyncProfiler.so=start,event=cpu,cstack=vm,ann,file=raytrace_nograal.html \
+            -Xbatch -XX:+UseSerialGC -XX:CICompilerCount=2 -XX:+PrintCodeCache \
+			-XX:-UseCodeCacheFlushing -XX:-MethodFlushing -XX:-PrintCompilation \
+			-XX:+UnlockDiagnosticVMOptions -XX:-PrintInlining -XX:+CITime \
+			--module-path target/js-deps --add-modules org.graalvm.polyglot \
+			-XX:+UnlockExperimentalVMOptions -XX:-EnableJVMCI \
+			--upgrade-module-path target/compiler-deps \
+			-cp target/graal-js-test-1.0-SNAPSHOT.jar \
+			io.simonis.graaljs.test.OctaneBenchmarkRunner raytrace.js
 
 Score (version 9): 565
 
@@ -58,4 +66,4 @@ real    2m40,144s
 user    2m39,055s
 sys     0m0,818s
 ```
-[![Example](https://github.com/simonis/GraalJsTest/blob/data/flamegraphs/raytrace_nograal.png)](https://htmlpreview.github.io/?https://github.com/simonis/GraalJsTest/blob/data/flamegraphs/raytrace_nograal.html)
+[![Example](https://github.com/simonis/GraalJsTest/blob/main/data/flamegraphs/raytrace_nograal.png)](https://htmlpreview.github.io/?https://github.com/simonis/GraalJsTest/blob/main/data/flamegraphs/raytrace_nograal.html)
