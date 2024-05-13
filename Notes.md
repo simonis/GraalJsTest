@@ -5,7 +5,7 @@
   - What's the difference between [`org.graalvm.js`](https://mvnrepository.com/artifact/org.graalvm.js) and [`org.graalvm.polyglot`](https://mvnrepository.com/artifact/org.graalvm.polyglot) on Maven Central?
   - e.g. [`org.graalvm.polyglot » js-isolate`](https://mvnrepository.com/artifact/org.graalvm.polyglot/js-isolate) is just a POM with a dependency on [`org.graalvm.js » js-isolate`](https://mvnrepository.com/artifact/org.graalvm.js/js-isolate) and [`org.graalvm.truffle » truffle-enterprise`](https://mvnrepository.com/artifact/org.graalvm.truffle/truffle-enterprise).
   - `js-isolate-23.1.2-sources.jar` only contains the sources of `PolyglotIsolateResource.java` (and `PolyglotIsolateResourceProvider.java` which seems to be generated from the first one).
-  - `js-isolate-23.1.2-sources.jar` contains a native version of the `org.graalvm.js.isolate` module for several platforms (e.g. `linux/amd64/libvm/libjsvm.so` (~200mb), `windows/amd64/libvm/jsvm.dll`, ..).
+  - `js-isolate-23.1.2.jar` contains a native version of the `org.graalvm.js.isolate` module for several platforms (e.g. `linux/amd64/libvm/libjsvm.so` (~200mb), `windows/amd64/libvm/jsvm.dll`, ..).
     - ToDo: does the native shared library already contain precompiled version of Truffle and GraalJS?
 - [Polyglot Sandboxing](https://www.graalvm.org/latest/security-guide/polyglot-sandbox/). This feature (see [`org.graalvm.polyglot.SandboxPolicy`](https://www.graalvm.org/sdk/javadoc/org/graalvm/polyglot/SandboxPolicy.html)) is available since version 23 and presumably only available in GraalVM Enterprise.
   - ToDo: what'S the difference between "Polyglot Isolates" and "Polyglot Sandboxing"? Are they orthogonal? Is it possible to combine Sandboxing with Isolates?
@@ -87,14 +87,19 @@ Notice that although GraalVM `23.1` is targeted for JDK 21 the pure Java artifac
     [engine] opt done   id=314   Math.floor                                         |Tier 1|Time   334( 225+109 )ms|AST    2|Inlined   0Y   0N|IR    103/   212|CodeSize    1024|Addr 0x7f5178b3b060|Timestamp 34053963283959|Src <builtin>:1
     TruffleHotSpotCompilation-6793 LTruffleIR/Tier1;                                                      Math_floor                                    ()LTruffleIR/Tier1;                                 | 325583us  2084B bytecodes  1024B codesize
     ```
+  - Also see the latest version of [truffle/docs/Optimizing.md](https://github.com/oracle/graal/blob/master/truffle/docs/Optimizing.md) and [truffle/docs/Options.md](https://github.com/oracle/graal/blob/master/truffle/docs/Options.md) in the Graal GitHub repository.
 - Mandrel [discussion/PR](https://github.com/graalvm/mandrel-packaging/pull/369) about supporting Truffle in native-image with Mandrel.
 - [Truffle Enterprise](https://mvnrepository.com/artifact/org.graalvm.truffle/truffle-enterprise/23.1.2) is available for download from Maven Central (`org.graalvm.truffle/truffle-enterprise`) under the GFTC but the sources artifact `truffle-enterprise-23.1.2-sources.jar` only contains a `LICENSE` file with the GFTC.
+- [TruffleRuby](https://chrisseaton.com/truffleruby/) by Chris Seaton
+- [Graal Truffle tutorial in 13 parts](https://www.endoflineblog.com/graal-truffle-tutorial-part-0-what-is-truffle) by Adam Rubka
+- [Embedding Truffle Languages](https://nirvdrum.com/2022/05/09/truffle-language-embedding.html) by Kevin Menard
 
 ### GraalVM Compiler
 
 - Run with `-XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI --upgrade-module-path <path-to-compiler.jar-module>` to enable native compilation of GraalJS/Truffle code with the jar-based, pure Java GraalVM compiler.
 - [graal/compiler/docs/Debugging.md](https://github.com/oracle/graal/blob/master/compiler/docs/Debugging.md) documents the option `-XX:+JVMCIPrintProperties` which can be used to print the graal compiler related command line properties like e.g. `-Dgraal.PrintCompilation=true`. Notice that starting with JDK 22, the [Graal compiler options have been moved to the `jdk.graal` prefix](https://github.com/oracle/graal/commit/6f34cc046f3b2) (e.g. )`-Djdk.graal.PrintCompilation=true`
   - Notice that `-XX:+JVMCIPrintProperties` only works on a GraalVM JDK standalone. On a standard JDK you additionally need `-XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI --upgrade-module-path compiler-23.1.2.jar --module-path word-23.1.2.jar:truffle-compiler-23.1.2.jar:collections-23.1.2.jar` in order make the Graal Compiler available (activating it with `-XX:+UseJVMCICompiler` is not required).
+- [Understanding How Graal Works - a Java JIT Compiler Written in Java](https://chrisseaton.com/truffleruby/jokerconf17/) by Chris Seaton
 
 #### Building the GraalVM compiler
 
@@ -106,7 +111,7 @@ So in order to build and use `libjvmcicompiler.so` we either have to choose the 
 
 While Mandrel is compatible with upstream OpenJDK, every new OpenJDK update release can introduce changes which require fixes to Mandrel (e.g. the [downport](https://github.com/openjdk/jdk17u/commit/a06047acce82f60b5ca193a7b2aa329ed24b46f4) of "[JDK-8168469: Memory leak in JceSecurity](https://bugs.openjdk.org/browse/JDK-8168469)" to JDK 17.0.10 caused a build failure in Mandrel which had to be fixed with "[[23.0] Mandrel 23.0 fails to build with JDK 17.0.10-EA](https://github.com/graalvm/mandrel/issues/607)").
 
-Mandrel as well as GraalVM requires a build JDK with static versions of the native libraries because they will be linked statically into the native image produced by the native image builder. since JDK 11, these static libraries can be created as follows:
+Mandrel as well as GraalVM requires a build JDK with static versions of the native libraries because they will be linked statically into the native image produced by the native image builder. Since JDK 11, these static libraries can be created as follows:
 
 ```bash
 $ git clone https://github.com/openjdk/jdk17u-dev
@@ -138,6 +143,9 @@ $ git checkout mandrel-23.1.2.0-Final
 $ mx --env libgraal build
 ...
 ```
+
+By default `mx` places the build artifacts into the `mxbuild/` subdirectory, but not only in the current directory but also in sibling directories /e.g. `../sdk/mxbuild/`, `../compiler/mxbuild` etc. which can be a little confusing. If you want to keep the source directory clean, you can use the `MX_ALT_OUTPUT_ROOT` environment variable to specify an alternative output directory for all build artifacts.
+
 Notice that building `mandrel-23.1.2.0-Final` with OpenJDK 17 is possible with a patch ([fix_mandrel-23.1.2.0-Final_on_jdk17.patch](./data/fix_mandrel-23.1.2.0-Final_on_jdk17.patch)):
 ```bash
 $ cd ..
@@ -157,3 +165,14 @@ Your Java runtime '17.0.10+7-LTS' with compiler version '23.1.2' is incompatible
 The Java runtime version must be greater or equal to JDK '21' and smaller than JDK '25'.
 Update your Java runtime to resolve this.
 ```
+
+### GraalVM Native Image
+
+- [GraalVM Native Image Quick Reference v1](https://medium.com/graalvm/graalvm-native-image-quick-reference-4ceb84560fd8) and [GraalVM Native Image Quick Reference v2](https://medium.com/graalvm/native-image-quick-reference-v2-332cf453d1bc) by Olga Gupalo
+- [Memory Management at Native Image Run Time](https://docs.oracle.com/en/graalvm/enterprise/20/docs/reference-manual/native-image/MemoryManagement)
+- [Package `org.graalvm.nativeimage.c`](https://www.graalvm.org/sdk/javadoc/org/graalvm/nativeimage/c/package-summary.html): This package and its sub-packages provide a fast and lightweight interface between Java code and C code.
+- [The many ways of polyglot programming with GraalVM](https://medium.com/graalvm/3-ways-to-polyglot-with-graalvm-fb28c1542b45) by Michael Simons. Example on how to build a shared library from a Java program with GraalVM and access it from C using the Native Image C API.
+- [ABOUT THE TOOLING AVAILABLE TO CREATE NATIVE GRAALVM IMAGES.
+](https://info.michael-simons.eu/2020/09/15/about-the-tooling-available-to-create-native-graalvm-images/) by Michael Simons. How to compile Neo4J into a native image (including substitution example).
+- [GraalVM JNI Invocation API](https://www.graalvm.org/latest/reference-manual/native-image/native-code-interoperability/JNIInvocationAPI/)
+- [Embedding Truffle Languages](https://nirvdrum.com/2022/05/09/truffle-language-embedding.html) by Kevin Menard. Compares the usage of the Native Image C API and the JNI Invocation API for calling Java methods from an Native Image shared library.

@@ -1,5 +1,7 @@
 package io.simonis.graaljs.test;
 
+import java.io.FilterOutputStream;
+import java.io.IOException;
 import java.net.URI;
 import java.net.URL;
 import java.nio.file.Files;
@@ -38,61 +40,60 @@ public class OctaneBenchmarkRunner {
       fs = FileSystems.getDefault();
       octanePath = fs.getPath(octaneUrlParts[0]).toAbsolutePath();
     }
+    if (args.length == 0) {
+      args = new String[] { "richards.js",    "deltablue.js",   "crypto.js",           "raytrace.js", "earley-boyer.js",
+                            "regexp.js",      "splay.js",       "navier-stokes.js",    "pdfjs.js",    "mandreel.js",
+                            "gbemu-part1.js", "gbemu-part2.js", "code-load.js",        "box2d.js",    "zlib.js",
+                            "zlib-data.js",   "typescript.js",  "typescript-input.js", "typescript-compiler.js"};
+    }
     StringBuffer benchmarks = new StringBuffer();
     benchmarks.append(Files.readString(octanePath.resolve("base.js")));
-    benchmarks.append(Files.readString(octanePath.resolve("richards.js")));
-    benchmarks.append(Files.readString(octanePath.resolve("deltablue.js")));
-    benchmarks.append(Files.readString(octanePath.resolve("crypto.js")));
-    benchmarks.append(Files.readString(octanePath.resolve("raytrace.js")));
-    benchmarks.append(Files.readString(octanePath.resolve("earley-boyer.js")));
-    benchmarks.append(Files.readString(octanePath.resolve("regexp.js")));
-    benchmarks.append(Files.readString(octanePath.resolve("splay.js")));
-    benchmarks.append(Files.readString(octanePath.resolve("navier-stokes.js")));
-    benchmarks.append(Files.readString(octanePath.resolve("pdfjs.js")));
-    benchmarks.append(Files.readString(octanePath.resolve("mandreel.js")));
-    benchmarks.append(Files.readString(octanePath.resolve("gbemu-part1.js"))
-                      // Make 'Gameboy' reentrant
-                      .replace("""
-                               function tearDownGameboy() {
-                                 decoded_gameboy_rom = null;
-                                 expectedGameboyStateStr = null;
-                               }
-                               """,
-                               """
-                               function tearDownGameboy() {
-                                 decoded_gameboy_rom = null;
-                               }
-                               """));
-    benchmarks.append(Files.readString(octanePath.resolve("gbemu-part2.js")));
-    benchmarks.append(Files.readString(octanePath.resolve("code-load.js")));
-    benchmarks.append(Files.readString(octanePath.resolve("box2d.js"))
-                      // Make 'Box2D' reentrant
-                      .replace("""
-                               function tearDownBox2D() {
-                                 world = null;
-                                 Box2D = null;
-                               }
-                               """,
-                               """
-                               function tearDownBox2D() {
-                                 world = null;
-                               }
-                               """));
-    benchmarks.append(Files.readString(octanePath.resolve("zlib.js")));
-    benchmarks.append(Files.readString(octanePath.resolve("zlib-data.js")));
-    benchmarks.append(Files.readString(octanePath.resolve("typescript.js"))
-                      // Make 'Typescript' reentrant
-                      .replace("""
-                               function tearDownTypescript() {
-                                 compiler_input = null;
-                               }
-                               """,
-                               """
-                               function tearDownTypescript() {
-                               }
-                               """));
-    benchmarks.append(Files.readString(octanePath.resolve("typescript-input.js")));
-    benchmarks.append(Files.readString(octanePath.resolve("typescript-compiler.js")));
+    for (String benchmark : args) {
+      String src = Files.readString(octanePath.resolve(benchmark));
+      switch(src) {
+        case "gbemu-part1.js" :
+          // Make 'Gameboy' reentrant
+          src.replace("""
+                      function tearDownGameboy() {
+                        decoded_gameboy_rom = null;
+                        expectedGameboyStateStr = null;
+                      }
+                      """,
+                      """
+                      function tearDownGameboy() {
+                        decoded_gameboy_rom = null;
+                      }
+                      """);
+          break;
+        case "box2d.js" :
+          // Make 'Box2D' reentrant
+          src.replace("""
+                      function tearDownBox2D() {
+                        world = null;
+                        Box2D = null;
+                      }
+                      """,
+                      """
+                      function tearDownBox2D() {
+                        world = null;
+                      }
+                      """);
+          break;
+        case "typescript.js" :
+          // Make 'Typescript' reentrant
+          src.replace("""
+                      function tearDownTypescript() {
+                        compiler_input = null;
+                      }
+                      """,
+                      """
+                      function tearDownTypescript() {
+                      }
+                      """);
+          break;
+      }
+      benchmarks.append(src);
+    }
     benchmarks.append(// From "run.js":
 """
 var success = true;
@@ -130,12 +131,19 @@ function runOctane() {
 }
 """
                       );
-    Source runOctane = Source.create("js", benchmarks);
+    Source runOctane = Source.newBuilder("js", benchmarks, "octane_custom.js").build();
 
     int iterations = Integer.getInteger("iterations", 1);
 
     try (Engine engine = Engine.newBuilder("js")
          .allowExperimentalOptions(true)
+         .logHandler(new java.io.FilterOutputStream(System.out) {
+             public void close() throws IOException {
+               // Do not close the underyling stream because HotSpot might want
+               // to write some additional logs (e.g. -XX:+CITime) to stdout.
+               flush();
+             }
+           })
          .build()) {
       try (Context context = Context.newBuilder("js")
            .engine(engine)

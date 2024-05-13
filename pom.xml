@@ -39,6 +39,32 @@
     </profile>
 
     <profile>
+      <id>graal-23-1-2-isolate</id>
+      <properties>
+        <graalvm.version>23.1.2</graalvm.version>
+      </properties>
+      <dependencies>
+        <dependency>
+          <groupId>org.graalvm.polyglot</groupId>
+          <artifactId>polyglot</artifactId>
+          <version>${graalvm.version}</version>
+        </dependency>
+        <dependency>
+          <groupId>org.graalvm.polyglot</groupId>
+          <artifactId>js</artifactId>
+          <version>${graalvm.version}</version>
+          <type>pom</type>
+        </dependency>
+        <dependency>
+          <groupId>org.graalvm.polyglot</groupId>
+          <artifactId>js-isolate</artifactId>
+          <version>${graalvm.version}</version>
+          <type>pom</type>
+        </dependency>
+      </dependencies>
+    </profile>
+
+    <profile>
       <id>graal-23-0-3</id>
       <properties>
         <graalvm.version>23.0.3</graalvm.version>
