@@ -73,10 +73,25 @@ Notice that although GraalVM `23.1` is targeted for JDK 21 the pure Java artifac
 
 ### GraalVM Truffle
 
+- [Graal Truffle tutorial](https://www.endoflineblog.com/graal-truffle-tutorial-part-0-what-is-truffle) by Adam Ruka
+- [Seminar: Dynamic Metacompilation with Truffle](https://www.youtube.com/watch?v=pksRrON5XfU) with Christian Humer
+- [Truffle Language Implementation Framework](https://www.graalvm.org/latest/graalvm-as-a-platform/language-implementation-framework/)
 - [Truffle Unchained — Portable Language Runtimes as Java Libraries](https://medium.com/graalvm/truffle-unchained-13887b77b62c). Also see [GR-43819: Split Graal-SDK into new modules: polyglot, word, collections and nativeimage](https://github.com/oracle/graal/pull/7171) and the [Changelog entry for Graal Version 23.1.0](https://github.com/oracle/graal/blob/master/sdk/CHANGELOG.md#version-2310).
   - ([GR-47917](https://github.com/oracle/graal/pull/7239)) Added class-path isolation if polyglot is used from the class-path. At class initialization time and if polyglot is used from the class-path then the polyglot implementation spawns a module class loader with the polyglot runtime and language implementations. This allows to use an optimized runtime even if languages and polyglot are used from the class-path. Note that for best performance, it is recommended to load polyglot and the languages from the module-path. Comment from [org.graalvm.polyglot.Engine$ClassPathIsolation](https://github.com/oracle/graal/blob/774141206b82771ab80e0ea38d26d660292eb8ab/sdk/src/org.graalvm.polyglot/src/org/graalvm/polyglot/Engine.java#L1768): "*If Truffle is on the class-path (or a language), we do not want to expose these classes to embedders (users of the polyglot API). Unless disabled, we load all Truffle jars on the class-path in a special module layer instead of loading it through the class-path in the unnamed module*". This feature is controlled by `-Dpolyglotimpl.DisableClassPathIsolation` which defaults to `true` and observed by `-Dpolyglotimpl.TraceClassPathIsolation=true`.
   - ToDo: do we want to GraalJS & Truffle on the class or on the module path? The Graal Compiler has to be placed on the `--upgrade-module-path`. Also, if we put GraalJS & Truffle on the module path but our application classes are running form the class path we have to explicitly do `--add-modules org.graalvm.polyglot`.
-- [Optimizing Truffle Interpreters](https://docs.oracle.com/en/graalvm/jdk/17/docs/graalvm-as-a-platform/language-implementation-framework/Optimizing/#optimizing-truffle-interpreters)
+- [ Truffle/Engine Options ](https://www.graalvm.org/latest/graalvm-as-a-platform/language-implementation-framework/Options/)
+  To get them dynamically, you can do:
+  ```java
+  $ jshell -J--module-path -Jtarget/js-deps -J--add-modules -Jorg.graalvm.polyglot -J-XX:+UnlockExperimentalVMOptions -J-XX:+EnableJVMCI -J--upgrade-module-path -Jtarget/compiler-deps --execution local
+  jshell> /env -module-path target/js-deps
+  jshell> /env -add-modules org.graalvm.polyglot
+  jshell> org.graalvm.polyglot.Engine.newBuilder().build().getOptions().forEach(ok -> System.out.println(ok.getName() + ": " + ok.getHelp()))
+  ...
+  engine.BackgroundCompilation: Enable asynchronous truffle compilation in background threads (default: true)
+  engine.Compilation: Enable or disable Truffle compilation.
+  ...
+  ```
+- [Optimizing Truffle Interpreters](https://www.graalvm.org/latest/graalvm-as-a-platform/language-implementation-framework/Optimizing)
   - E.g. `-Dpolyglot.engine.TraceCompilation=true` or `-Dpolyglot.engine.CompilationStatistics=true` (which requires ` Engine.newBuilder("js").allowExperimentalOptions(true)`).
   - `-Dpolyglot.engine.TraceCompilation=true` will give you output like:
     ```
@@ -93,6 +108,7 @@ Notice that although GraalVM `23.1` is targeted for JDK 21 the pure Java artifac
 - [TruffleRuby](https://chrisseaton.com/truffleruby/) by Chris Seaton
 - [Graal Truffle tutorial in 13 parts](https://www.endoflineblog.com/graal-truffle-tutorial-part-0-what-is-truffle) by Adam Rubka
 - [Embedding Truffle Languages](https://nirvdrum.com/2022/05/09/truffle-language-embedding.html) by Kevin Menard
+- [Writing Truly Memory Safe JIT Compilers](https://medium.com/graalvm/writing-truly-memory-safe-jit-compilers-f79ad44558dd) by Mike Hearn
 
 ### GraalVM Compiler
 
