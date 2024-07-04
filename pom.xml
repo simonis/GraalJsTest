@@ -40,6 +40,9 @@
 
     <profile>
       <id>graal-23-1-2-isolate</id>
+      <build>
+        <directory>${basedir}/target-isolate</directory>
+      </build>
       <properties>
         <graalvm.version>23.1.2</graalvm.version>
       </properties>
@@ -65,9 +68,12 @@
     </profile>
 
     <profile>
-      <id>graal-23-0-3</id>
+      <id>graal-23-0-2</id>
+      <build>
+        <directory>${basedir}/target-23-0-2</directory>
+      </build>
       <properties>
-        <graalvm.version>23.0.3</graalvm.version>
+        <graalvm.version>23.0.2</graalvm.version>
       </properties>
       <dependencies>
         <dependency>
@@ -143,6 +149,32 @@
 	      <includeGrouIds>org.openjdk.nashorn,org.ow2.asm</includeGrouIds>
               <!-- Unfortunately <includeGrouIds> doesn't work, so we have to explicitely list all artifact ids -->
 	      <includeArtifactIds>nashorn-core,asm,asm-commons,asm-tree,asm-util,asm-analysis</includeArtifactIds>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-antrun-plugin</artifactId>
+        <version>1.8</version>
+        <executions>
+          <execution>
+            <id>make</id>
+            <phase>compile</phase>
+            <goals>
+              <goal>run</goal>
+            </goals>
+            <configuration>
+              <target>
+                <echo message="Creating test output directory"/>
+                <mkdir dir="${project.build.directory}/native"/>
+                <exec executable="make" dir="${project.build.directory}/native" failonerror="true">
+                  <arg value="-f"/>
+                  <arg value="${basedir}/src/main/native/Makefile"/>
+                  <arg value="SRC_DIR=${basedir}/src/main/native/cpp"/>
+                  <arg value="JAVA_HOME=${java.home}"/>
+                </exec>
+              </target>
             </configuration>
           </execution>
         </executions>
