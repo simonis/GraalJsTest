@@ -35,6 +35,11 @@
           <version>${graalvm.version}</version>
           <type>pom</type>
         </dependency>
+        <dependency>
+          <groupId>org.graalvm.truffle</groupId>
+          <artifactId>truffle-api</artifactId>
+          <version>${graalvm.version}</version>
+        </dependency>
       </dependencies>
     </profile>
 
@@ -178,6 +183,21 @@
             </configuration>
           </execution>
         </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>3.13.0</version>
+        <configuration>
+          <useModulePath>true</useModulePath>
+          <compilerArgs>
+            <!-- I don't know why this empty `-module-path` works and          -->
+            <!-- I don't understand how I can add my project dependencies like  -->
+            <!-- "truffle-api" to the java module path insted of the classpath? -->
+            <arg>--module-path</arg>
+            <arg>--add-modules=org.graalvm.truffle</arg>
+          </compilerArgs>
+        </configuration>
       </plugin>
     </plugins>
   </build>
