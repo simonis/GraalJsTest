@@ -1,6 +1,6 @@
 package io.simonis.graaljs.test;
 
-import com.oracle.truffle.api.CallTarget;;
+import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.nodes.RootNode;
