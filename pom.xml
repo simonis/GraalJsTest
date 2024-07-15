@@ -184,25 +184,6 @@
           </execution>
         </executions>
       </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-compiler-plugin</artifactId>
-        <version>3.13.0</version>
-        <configuration>
-          <useModulePath>true</useModulePath>
-          <compilerArgs>
-            <!-- I don't know why this empty `_-module-path` works and          -->
-            <!-- I don't understand how I can add my project dependencies like  -->
-            <!-- "truffle-api" to the java module path insted of the classpath? -->
-            <!-- Now I understand!!! The empty `-module-path` arguments works   -->
-            <!-- because it actually consumes the following `_-add-modules=..`  -->
-            <!-- paramter as its own argument and thus basically compiles with  -->
-            <!-- `truffle.jar` on the classpath.                                -->
-            <arg>--module-path</arg>
-            <arg>--add-modules=org.graalvm.truffle</arg>
-          </compilerArgs>
-        </configuration>
-      </plugin>
     </plugins>
   </build>
 
