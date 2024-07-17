@@ -8,6 +8,7 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.dsl.TypeSystem;
 import com.oracle.truffle.api.dsl.TypeSystemReference;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.nodes.DirectCallNode;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.nodes.RootNode;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
@@ -38,6 +39,7 @@ public class TestLang {
     public double executeDouble(VirtualFrame frame) {
         return this.value;
     }
+    @Override
     public Object executeGeneric(VirtualFrame frame) {
         return this.value;
     }
@@ -58,8 +60,43 @@ public class TestLang {
     public double executeDouble(VirtualFrame frame) {
         return this.value;
     }
+    @Override
     public Object executeGeneric(VirtualFrame frame) {
         return this.value;
+    }
+  }
+
+  public static final class ReadArgExprNode extends TestNode {
+    private final int index;
+
+    public ReadArgExprNode(int index) {
+      this.index = index;
+    }
+    @Override
+    public int executeInt(VirtualFrame frame) throws UnexpectedResultException {
+      Object[] arguments = frame.getArguments();
+      Object ret = arguments[index];
+      if (ret instanceof Integer) {
+        return (int)ret;
+      }
+      throw new UnexpectedResultException(ret);
+    }
+    @Override
+    public double executeDouble(VirtualFrame frame) {
+      Object[] arguments = frame.getArguments();
+      Object ret = arguments[index];
+      if (ret instanceof Integer) {
+        return (int)ret;
+      }
+      if (ret instanceof Double) {
+        return (double)ret;
+      }
+      return (double)ret; // This will throw a ClassCastException
+    }
+    @Override
+    public Object executeGeneric(VirtualFrame frame) {
+      Object[] arguments = frame.getArguments();
+      return arguments[index];
     }
   }
 
@@ -158,10 +195,36 @@ public class TestLang {
       if (value instanceof Integer) {
         return ((Integer) value).doubleValue();
       }
-      return (double) value;
+      return (double) value; // This will throw a ClassCastException if 'value' is not a 'Double'
     }
   }
+  /*
+  public final class FunctionCallExprNode extends TestNode {
+    @Child
+    private TestNode targetExpression;
+    @Children
+    private final TestNode[] callArguments;
+    @Child
+    private final DirectCallNode function;
 
+    public FunctionCallExprNode(TestNode targetExpression, List<TestNode> callArguments) {
+        this.targetExpression = targetExpression;
+        this.callArguments = callArguments.toArray(new TestNode[]{});
+        this.dispatchNode = FunctionDispatchNodeGen.create();
+    }
+
+    @Override
+    @ExplodeLoop
+    public Object executeGeneric(VirtualFrame frame) {
+        Object[] argumentValues = new Object[this.callArguments.length];
+        for (int i = 0; i < this.callArguments.length; i++) {
+            argumentValues[i] = this.callArguments[i].executeGeneric(frame);
+        }
+
+        return this.dispatchNode.executeDispatch(targetExression, argumentValues);
+    }
+  }
+  */
   @TypeSystem
   public static abstract class TestTypeSystem {
     @ImplicitCast
@@ -200,16 +263,31 @@ public class TestLang {
   }
 
   public static void main(String[] args) throws Exception {
-    TestNode exprNode = new AdditionNode(
+    TestNode constAdd = new AdditionNode(
       new IntLiteralNode(12),
       new IntLiteralNode(30));
-    RootNode rootNode = new TestRootNode(exprNode);
+    RootNode rootNode = new TestRootNode(constAdd);
     CallTarget callTarget = rootNode.getCallTarget();
     Object result = callTarget.call();
     System.out.println(result);
+    DirectCallNode constAddFunction = DirectCallNode.create(callTarget);
+
+    TestNode varAdd = new AdditionNode(
+      new ReadArgExprNode(0),
+      new ReadArgExprNode(1));
+    rootNode = new TestRootNode(varAdd);
+    callTarget = rootNode.getCallTarget();
+    result = callTarget.call(12, 30);
+    System.out.println(result);
+    DirectCallNode addFunction = DirectCallNode.create(callTarget);
+    result = addFunction.call(12, 30);
+    System.out.println(result);
     for (int i = 1 ; i <= 10_000; i++) {
-      callTarget.call();
+      //result = callTarget.call(i, i);
+      result = addFunction.call(12, 30);
+      assert (int)result == i + i;
     }
+
     TestNode dslExprNode = TestLangFactory.DSLAdditionNodeGen.create(
       new IntLiteralNode(12),
       new IntLiteralNode(30));
