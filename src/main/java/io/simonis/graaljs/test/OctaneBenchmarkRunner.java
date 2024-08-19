@@ -50,46 +50,46 @@ public class OctaneBenchmarkRunner {
     benchmarks.append(Files.readString(octanePath.resolve("base.js")));
     for (String benchmark : args) {
       String src = Files.readString(octanePath.resolve(benchmark));
-      switch(src) {
+      switch(benchmark) {
         case "gbemu-part1.js" :
           // Make 'Gameboy' reentrant
-          src.replace("""
-                      function tearDownGameboy() {
-                        decoded_gameboy_rom = null;
-                        expectedGameboyStateStr = null;
-                      }
-                      """,
-                      """
-                      function tearDownGameboy() {
-                        decoded_gameboy_rom = null;
-                      }
-                      """);
+          src = src.replace("""
+                            function tearDownGameboy() {
+                              decoded_gameboy_rom = null;
+                              expectedGameboyStateStr = null;
+                            }
+                            """,
+                            """
+                            function tearDownGameboy() {
+                              decoded_gameboy_rom = null;
+                            }
+                            """);
           break;
         case "box2d.js" :
           // Make 'Box2D' reentrant
-          src.replace("""
-                      function tearDownBox2D() {
-                        world = null;
-                        Box2D = null;
-                      }
-                      """,
-                      """
-                      function tearDownBox2D() {
-                        world = null;
-                      }
-                      """);
+          src = src.replace("""
+                            function tearDownBox2D() {
+                              world = null;
+                              Box2D = null;
+                            }
+                            """,
+                            """
+                            function tearDownBox2D() {
+                              world = null;
+                            }
+                            """);
           break;
         case "typescript.js" :
           // Make 'Typescript' reentrant
-          src.replace("""
-                      function tearDownTypescript() {
-                        compiler_input = null;
-                      }
-                      """,
-                      """
-                      function tearDownTypescript() {
-                      }
-                      """);
+          src = src.replace("""
+                            function tearDownTypescript() {
+                              compiler_input = null;
+                            }
+                            """,
+                            """
+                            function tearDownTypescript() {
+                            }
+                            """);
           break;
       }
       benchmarks.append(src);
@@ -104,7 +104,7 @@ function PrintResult(name, result) {
 
 
 function PrintError(name, error) {
-  PrintResult(name, error);
+  PrintResult(name, error.stack);
   success = false;
 }
 
@@ -168,6 +168,39 @@ function runOctane() {
         for (int i = 0; i < iterations; i++) {
           runner.execute();
           System.out.println("\n");
+        }
+      }
+
+      int contexts = Integer.getInteger("contexts", 0);
+
+      for (int j = 0; j < contexts; j++) {
+        System.out.println("====================================================================");
+        System.out.println("====================================================================");
+        System.out.println("====================================================================");
+        try (Context context = Context.newBuilder("js")
+             .engine(engine)
+             .allowIO(true)
+             // Needed for 'js.shell' option below
+             .allowExperimentalOptions(true)
+             // Required for 'octane/zlib' which requires the non-standard, global 'read()' function.
+             // The "js.shell" option provides global built-ins like 'read()' for compatibility with d8.
+             .option("js.shell", "true")
+             // 'run.js' has to access the benchmarks and benchmark data which might be in the jar file
+             // from which we are running so we have to make sure we're using the right file system.
+             .fileSystem(org.graalvm.polyglot.io.FileSystem.newFileSystem(fs))
+             .currentWorkingDirectory(octanePath)
+             .build()) {
+
+          context.eval(runOctane);
+
+          Value jsBindings = context.getBindings("js");
+          Value runner = jsBindings.getMember("runOctane");
+          assert runner.canExecute();
+
+          for (int i = 0; i < iterations; i++) {
+            runner.execute();
+            System.out.println("\n");
+          }
         }
       }
     }
