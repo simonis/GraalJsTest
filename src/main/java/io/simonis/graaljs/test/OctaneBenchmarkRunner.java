@@ -46,9 +46,17 @@ public class OctaneBenchmarkRunner {
                             "gbemu-part1.js", "gbemu-part2.js", "code-load.js",        "box2d.js",    "zlib.js",
                             "zlib-data.js",   "typescript.js",  "typescript-input.js", "typescript-compiler.js"};
     }
-    StringBuffer benchmarks = new StringBuffer();
-    benchmarks.append(Files.readString(octanePath.resolve("base.js")));
+    String octaneCustomJS = "octane_custom.js";
+    System.out.println("All the Octane benchmark files get concatenated into the single");
+    System.out.println("virtual file \"" + octaneCustomJS + "\" starting at line:");
+    StringBuilder benchmarks = new StringBuilder();
+    int line = 1;
+    System.out.println(line + " : base.js");
+    String base = Files.readString(octanePath.resolve("base.js"));
+    line += base.lines().count();
+    benchmarks.append(base);
     for (String benchmark : args) {
+      System.out.println(line + " : " + benchmark);
       String src = Files.readString(octanePath.resolve(benchmark));
       switch(benchmark) {
         case "gbemu-part1.js" :
@@ -92,8 +100,10 @@ public class OctaneBenchmarkRunner {
                             """);
           break;
       }
+      line += src.lines().count();
       benchmarks.append(src);
     }
+    System.out.println(line + " : run.js");
     benchmarks.append(// From "run.js":
 """
 var success = true;
@@ -131,7 +141,7 @@ function runOctane() {
 }
 """
                       );
-    Source runOctane = Source.newBuilder("js", benchmarks, "octane_custom.js").build();
+    Source runOctane = Source.newBuilder("js", benchmarks, octaneCustomJS).build();
 
     int iterations = Integer.getInteger("iterations", 1);
 
