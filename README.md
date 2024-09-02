@@ -18,6 +18,8 @@ $ git submodule update --init --recursive
 $ JAVA_HOME=<path-to-jdk17+> mvn clean package
 ```
 
+After the build, the GraalJS dependencies can be found under `./target/js-deps` and the Graal Compiler dependencies under `./target/compiler-deps`.
+
 Checking the dependencies:
 ```bash
 $ mvn dependency:tree -Dverbose
@@ -47,13 +49,13 @@ $ mvn dependency:tree -Dverbose
 [INFO]    \- org.graalvm.truffle:truffle-compiler:jar:23.1.2:runtime
 ```
 
-There's an alternative profile for building the older `23.0.3` version of the libraries:
+There are alternative profiles for building the older `23.0.3` and the newer `24.0.2` version of the libraries:
 
 ```bash
 $ JAVA_HOME=<path-to-jdk17+> mvn clean package -Pgraal-23-0-3
 ```
 
-The dependencies are a little different here (and described in more detail in the [Truffle Unchained — Portable Language Runtimes as Java Libraries](https://medium.com/graalvm/truffle-unchained-13887b77b62c) blog):
+The build artifacts for these alternative profiles will be placed under `./target-23-0-2/` and `./target-24-0-2/` respectively. Notice, that the dependencies are a little different for the older libraries (and described in more detail in the [Truffle Unchained — Portable Language Runtimes as Java Libraries](https://medium.com/graalvm/truffle-unchained-13887b77b62c) blog):
 ```bash
 $ mvn dependency:tree -Pgraal-23-0-3 -Dverbose
 [INFO] io.simonis:graal-js-test:jar:1.0-SNAPSHOT
@@ -79,7 +81,8 @@ The following examples use the GraalJS/Truffle modules downloaded automatically 
     ```bash
     $ java --module-path target/js-deps --add-modules org.graalvm.polyglot \
            -cp target/graal-js-test-1.0-SNAPSHOT.jar \
-           -Diterations=5 io.simonis.graaljs.test.OctaneBenchmarkRunner
+           -Diterations=5 -Dcontexts=0
+           io.simonis.graaljs.test.OctaneBenchmarkRunner
     ...
     [engine] WARNING: The polyglot engine uses a fallback runtime that does not support runtime compilation to native code.
     Execution without runtime compilation will negatively impact the guest application performance.
@@ -120,7 +123,8 @@ The following examples use the GraalJS/Truffle modules downloaded automatically 
            -cp target/graal-js-test-1.0-SNAPSHOT.jar \
            -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI \
            --upgrade-module-path target/compiler-deps \
-           -Diterations=5 io.simonis.graaljs.test.OctaneBenchmarkRunner
+           -Diterations=5 -Dcontexts=0
+           io.simonis.graaljs.test.OctaneBenchmarkRunner
     ```
     <details>
       <summary>Console output</summary>
@@ -156,7 +160,7 @@ The following examples use the GraalJS/Truffle modules downloaded automatically 
     ```
     </details>
 
-3. Running with the native GraalVM JVMCI compiler (see [Notes.md](./Notes.md#building-libgraal-with-mandrel-and-openjdk) for how to build a native version of the compiler). This does not only require that `libjvmcicompiler.so` was built with the same JDK we are now running on, it also requires that the version of libgraal is compatible with the version of the JDK (and JVMCI it supports) we are running on. E.g. we can run with libgraal 23.1.2 compiled with JDK 21 on JDK 21 or with libgraal 23.0.3 compiled with JDK 17 on JDK 17, but not with libgraal 23.1.2 compiled with JDK 17 on JDK 17.
+3. Running with the native GraalVM JVMCI compiler (i.e. "[libgraal](https://medium.com/graalvm/libgraal-graalvm-compiler-as-a-precompiled-graalvm-native-image-26e354bee5c)", see [Notes.md](./Notes.md#building-libgraal-with-mandrel-and-openjdk) for how to build a native version of the compiler). This does not only require that `libjvmcicompiler.so` was built with the same JDK we are now running on, it also requires that the version of libgraal is compatible with the version of the JDK (and JVMCI it supports) we are running on. E.g. we can run with libgraal 23.1.2 compiled with JDK 21 on JDK 21 or with libgraal 23.0.3 compiled with JDK 17 on JDK 17, but not with libgraal 23.1.2 compiled with JDK 17 on JDK 17.
     ```bash
     $ java --module-path target/js-deps --add-modules org.graalvm.polyglot \
            -cp target/graal-js-test-1.0-SNAPSHOT.jar \
@@ -164,6 +168,12 @@ The following examples use the GraalJS/Truffle modules downloaded automatically 
            -XX:JVMCILibPath=<path-to>/mandrel/sdk/mxbuild/linux-amd64/libjvmcicompiler.so.image \
            -Diterations=5 io.simonis.graaljs.test.OctaneBenchmarkRunner
     ```
+
+**Note**: If we want to use GraalJS 24.0 or newer, we need to add the following exports to our command line:
+```
+--add-exports org.graalvm.truffle.compiler/com.oracle.truffle.compiler=jdk.internal.vm.compiler  --add-exports org.graalvm.truffle.compiler/com.oracle.truffle.compiler.hotspot=jdk.internal.vm.compiler --add-exports org.graalvm.truffle.compiler/com.oracle.truffle.compiler.hotspot.libgraal=jdk.internal.vm.compiler  --add-exports org.graalvm.word/org.graalvm.word.impl=jdk.internal.vm.compiler
+```
+This is because GraalJS 24.0 is designed to work with OpenJDK 22+ and in OpenJDK 22 the `jdk.internal.vm.compiler` module was renamed to `jdk.graal.compiler` (see [JDK-8318027: Support alternative name to jdk.internal.vm.compiler](https://bugs.openjdk.org/browse/JDK-8318027)).
 #### Benchmark results
 
 The following benchmark results were taken on a [`c5.metal` EC2 instance](https://aws.amazon.com/ec2/instance-types/c5/). They display the lowest, highest and average score out of 20 Octane benchmark runs in a single `Context` (except for the "interpreted" runs which didn't use "libgraal" at all and only ran for 3 times). They all ran with `-XX:ReservedCodeCacheSize=2g -XX:InitialCodeCacheSize=2g -XX:NonProfiledCodeHeapSize=1500m -XX:-UseCodeCacheFlushing` to make sure that insufficient CodeCache space won't affect the results. I turns out that the CodeCache usage is constantly growing with every new Octane run and never gets to a steady state (reaching about ~1gb of code in the non-profiled segment (measured by `jcmd OctaneBenchmarkRunner Compiler.codecache`) and more than 30.000 compiled methods as displayed by the output of `-Dpolyglot.engine.CompilationStatistics=true`). This behavior might be due to some dynamic code execution (i.e. using [`eval()`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/eval)) in the benchmark but requires more detailed analysis.
@@ -251,6 +261,8 @@ while the "jargraal" variant (as well as the "libgraal" version `23.0.2` bundled
 ```
 
 ##### Misc
+
+If the `-Dcontexts=<n>` is greater then zero, the benchmark will be run in `<n>` different [`org.graalvm.polyglot.Context`](https://www.graalvm.org/sdk/javadoc/org/graalvm/polyglot/Context.html)s, but still with the benchmarks from the same [`org.graalvm.polyglot.Source`](https://www.graalvm.org/sdk/javadoc/org/graalvm/polyglot/Source.html) object. This can be used to verify that Truffle triggered compilations can be cached and re-used among different `Context`s as long as they share the same [`org.graalvm.polyglot.Engine`](https://www.graalvm.org/sdk/javadoc/org/graalvm/polyglot/Engine.html). See "[code caching across multiple contexts](https://www.graalvm.org/latest/reference-manual/embed-languages/#code-caching-across-multiple-contexts)" for more details.
 
 In order to verify if Truffle uses the GraalVM compiler or if `-XX:+UseJVMCI` is indeed triggering the usage of the GraalVM compiler as HotSpot high-tier JIT compiler, the `-XX:+CITime` option comes in handy. At VM exit it displays compiler statistics which look as follows if running with `-XX:-UseJVMCI`:
 ```
