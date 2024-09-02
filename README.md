@@ -3,7 +3,7 @@
 This repository contains various tests, benchmarks and [notes](./Notes.md) for [GraalJS](https://github.com/oracle/graaljs).
 
 #### Benchmarks
-Running the [Octane](https://github.com/chromium/octane) benchmark with various configurations of [GraalJS](https://github.com/oracle/graaljs).
+Running the [Octane](https://github.com/chromium/octane) benchmark with various configurations of [GraalJS](https://github.com/oracle/graaljs). The original Octane benchmark files are included into this repository as as submodule under `src/main/resources/resources/octane/`.
 
 The default Octane runner [`run.js`](https://github.com/chromium/octane/blob/570ad1ccfe86e3eecba0636c8f932ac08edec517/run.js) is a small script which uses [`load(source)`](https://github.com/oracle/graaljs/blob/master/docs/user/JavaScriptCompatibility.md#loadsource) to load (i.e. parse and execute) all the single benchmarks. Because I'm not sure sure if these dynamically loaded benchmarks are still tied to and cached together with `run.js`'s [`Source`](https://www.graalvm.org/sdk/javadoc/org/graalvm/polyglot/Source.html) object, I decided to manually load all the single benchmarks into a [single `Source` object](https://github.com/simonis/GraalJsTest/blob/30f6fc28747bb3da8679e3e7332214f785260423/src/main/java/io/simonis/graaljs/test/OctaneBenchmarkRunner.java#L130) along with a slightly modified [runner](https://github.com/simonis/GraalJsTest/blob/30f6fc28747bb3da8679e3e7332214f785260423/src/main/java/io/simonis/graaljs/test/OctaneBenchmarkRunner.java#L94-L128) which executes the benchmarks.
 
@@ -168,6 +168,48 @@ The following examples use the GraalJS/Truffle modules downloaded automatically 
            -XX:JVMCILibPath=<path-to>/mandrel/sdk/mxbuild/linux-amd64/libjvmcicompiler.so.image \
            -Diterations=5 io.simonis.graaljs.test.OctaneBenchmarkRunner
     ```
+
+It is possible to run only selected benchmarks by specifying them on the command line. E.g.:
+```bash
+$ java ...
+       -Diterations=5 io.simonis.graaljs.test.OctaneBenchmarkRunner \
+       splay.js box2d.js typescript.js typescript-input.js typescript-compiler.js
+
+All the Octane benchmark files get concatenated into the single
+virtual file "octane_custom.js" starting at line:
+1 : base.js
+391 : splay.js
+814 : box2d.js
+1379 : typescript.js
+1550 : typescript-input.js
+1552 : typescript-compiler.js
+27297 : run.js
+```
+All the files that make up a benchmark have to be given on the command line (e.g. `typescript.js`, `typescript-input.js` and `typescript-compiler.js` for executing "Typescript" or `zlib.ja` and `zlib-data.js` to execute "zlib"). You can find the list of all benchmark files (except of `base.js` which always gets included by default) below:
+<details>
+  <summary>Benchmark files</summary>
+
+```
+"richards.js",
+"deltablue.js",
+"crypto.js",
+"raytrace.js",
+"earley-boyer.js",
+"regexp.js",
+"splay.js",
+"navier-stokes.js",
+"pdfjs.js",
+"mandreel.js",
+"gbemu-part1.js", "gbemu-part2.js",
+"code-load.js",
+"box2d.js",
+"zlib.js", "zlib-data.js",
+"typescript.js", "typescript-input.js", "typescript-compiler.js"
+```
+</details>
+
+
+Before running the benchmarks, the harness will print out the line number at which each single benchmark file starts in the generated, virtual source file. This can be useful to analyze JavaScript errors or stack traces because their line numbers refer to the absolute position in the generated, virtual source file rather to the position in the single benchmark files.
 
 **Note**: If we want to use GraalJS 24.0 or newer, we need to add the following exports to our command line:
 ```
