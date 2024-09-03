@@ -45,33 +45,65 @@
 
 #### Building GraalJS
 
-Building GraalJS (version `23.1.2`) along with its dependencies from source:
+Building GraalJS (version `23.1.x`) from source:
 ```bash
 $ mkdir Graal
 $ cd Graal
+$ git clone https://github.com/oracle/graal.git
+$ cd graal/
+$ git checkout release/graal-vm/23.1
+$ cd ..
+$ git clone https://github.com/oracle/graaljs
+$ cd graaljs/
+$ git checkout release/graal-vm/23.1
+$ grep mx_version common.json
+  "mx_version": "6.46.1",
+# dont't do 'mx sforceimports' as adviced in https://github.com/oracle/graaljs/blob/master/docs/Building.md because it will mess up your `../../graal` repo to a *strange* revision (defined in the 'imports.suites.regex' section of 'mx.graal-js/suite.py')!
+$ cd ..
 $ git clone https://github.com/graalvm/mx.git
 $ export PATH=$PWD/mx:$PATH
-$ git clone https://github.com/oracle/graal.git
-$ cd graal/compiler
-$ git checkout vm-ce-23.1.2
-$ export JAVA_HOME=/share/software/Java/corretto-17
-$ mx build
-$ cd ../truffle/
-$ mx build
-$ cd ../sdk/
-$ mx build
-$ cd ../regex/
-$ mx build
-$ cd ../../
-$ git clone https://github.com/oracle/graaljs
-$ cd graaljs/graal-js/
-$ git checkout vm-ce-23.1.2
-# dont't do 'mx sforceimports' as adviced in https://github.com/oracle/graaljs/blob/master/docs/Building.md because it will mess up your `../../graal` repo to a *strange* revision (defined in the 'imports.suites.regex' section of 'mx.graal-js/suite.py')!
-$ mx build
+$ cd mx/
+$ git checkout 6.46.1
+$ cd ../graaljs/graal-js/
+$ export JAVA_HOME=/Java/corretto-17
+$ MX_ALT_OUTPUT_ROOT=/tmp/graaljs-23.1 mx build --targets \
+  GRAALJS,GRAALJS_SCRIPTENGINE,TRUFFLE_JS_TESTS,GRAALJS_SCRIPTENGINE_TESTS
+$ MX_ALT_OUTPUT_ROOT=/tmp/graaljs-23.1 mx gate -t UnitTests
 ```
-Notice that although GraalVM `23.1` is targeted for JDK 21 the pure Java artifacts built from the tag `vm-ce-23.1.2` of these libraries can be build (and the results can be used) with OpenJDK 17 and later.
+This will build GraalJS along with its dependencies to `MX_ALT_OUTPUT_ROOT` without touching the source directory. The build artifacts can be found in the various `./*/dist/` subdirectories of `MX_ALT_OUTPUT_ROOT`:
+<details>
+  <summary>GraalJS build artifacts</summary>
 
-The [release/graal-vm/23.1](https://github.com/oracle/graal/tree/release/graal-vm/23.1) branch for GraalVM `23.1` for JDK 21 isn't supported by Oracle any more (at least not publicly). It has been moved to the master branch of the new [https://github.com/graalvm/graalvm-community-jdk21u](https://github.com/graalvm/graalvm-community-jdk21u) repository which is now maintained by the community.
+```bash
+$ ls -1 /tmp/graaljs-23.1/*/dists/*.jar
+/tmp/graaljs-23.1/graal-js/dists/graaljs.jar
+/tmp/graaljs-23.1/graal-js/dists/graaljs-scriptengine.jar
+/tmp/graaljs-23.1/graal-js/dists/graaljs-scriptengine-tests.jar
+/tmp/graaljs-23.1/graal-js/dists/truffle-js-factory-processor.jar
+/tmp/graaljs-23.1/graal-js/dists/truffle-js-snapshot-tool.jar
+/tmp/graaljs-23.1/graal-js/dists/truffle-js-tests.jar
+/tmp/graaljs-23.1/mx/dists/junit-tool.jar
+/tmp/graaljs-23.1/regex/dists/tregex.jar
+/tmp/graaljs-23.1/sdk/dists/collections.jar
+/tmp/graaljs-23.1/sdk/dists/nativebridge-processor.jar
+/tmp/graaljs-23.1/sdk/dists/nativeimage.jar
+/tmp/graaljs-23.1/sdk/dists/polyglot.jar
+/tmp/graaljs-23.1/sdk/dists/polyglot-processor.jar
+/tmp/graaljs-23.1/sdk/dists/word.jar
+/tmp/graaljs-23.1/truffle/dists/truffle-api.jar
+/tmp/graaljs-23.1/truffle/dists/truffle-dsl-processor.jar
+/tmp/graaljs-23.1/truffle/dists/truffle-icu4j.jar
+```
+</details>
+
+To build GraalJS you have to check out the Graal repository at the same directory level like the GraalJS repository (as showed in the build instructions above). If you don't do this, `mx build` will automatically clone the Graal repository at the commit specified in the `imports` section of `./graal-js/mx.graal-js/suite.py`.
+
+The file `common.json` in the `graaljs` repository contains the version of `mx` that should be used for building GraalJS. It should be the same like `mx_version` in the `./graal` repository if both repositories are synced to the same tag or branch (e.g. `release/graal-vm/23.1` in this example).
+
+Notice that although GraalVM `23.1` is targeted for JDK 21, the pure Java artifacts built from the tag `release/graal-vm/23.1` of these libraries can be build (and the results can be used) with OpenJDK 17 and later.
+
+The [release/graal-vm/23.1](https://github.com/oracle/graal/tree/release/graal-vm/23.1) branch for GraalVM `23.1` for JDK 21 isn't supported by Oracle any more (at least not publicly). It has been moved to the master branch of the new [https://github.com/graalvm/graalvm-community-jdk21u](https://github.com/graalvm/graalvm-community-jdk21u) repository which is now maintained by the community.The same is true for the [release/graal-vm/23.1](https://github.com/oracle/graaljs/tree/release/graal-vm/23.1) branch of the GraalJS repository. Until now there's no corresponding community repository for GraalJS 23.1 [but discussions to create one are underway](https://graalvm.slack.com/archives/CNBFR78F9/p1725034816736779).
+
 ### GraalVM Truffle
 
 - [Graal Truffle tutorial](https://www.endoflineblog.com/graal-truffle-tutorial-part-0-what-is-truffle) by Adam Ruka
@@ -124,6 +156,35 @@ Building the native version (i.e. "[libgraal](https://www.graalvm.org/latest/ref
 
 So in order to build and use `libjvmcicompiler.so` we either have to choose the *non-standard* labs-openjdk or use the [Mandrel](https://github.com/graalvm/mandrel) fork of GraalVM. Mandrel is a downstream distribution of the GraalVM community edition targeted to provide a native-image release specifically to support [Quarkus](https://github.com/quarkusio/quarkus). In contrast to patching OpenJDK, Mandrel patches the GraalVM project in order to make it compatible with unmodified upstream OpenJDK distributions. E.g. the [diff](https://github.com/graalvm/mandrel/compare/vm-23.1.0...mandrel-23.1.0.0-Final) between `mandrel-23.1.0.0-Final` and its upstream `vm-23.1.0` is 8 commits to 18 files resulting in ~400 lines of changes. It has to be noticed though, that the Mandrel project is only officially supporting the GraalVM's native image functionality and *not* libgraal (i.e. `libjvmcicompiler.so`). The "[Building Mandrel/libgraal at tag mandrel-23.1.2.0-Final with JDK 17 doesn't work](https://github.com/graalvm/mandrel/issues/688)" issue in the Mandrel project contains more details on the compatibility between various Mandrel, GraalVM and OpenJDK versions.
 
+**Note**: Since the creation of the [graalvm-community-jdk21u](https://github.com/graalvm/graalvm-community-jdk21u) repository (which was forked from the now stale [release/graal-vm/23.1](https://github.com/oracle/graal/tree/release/graal-vm/23.1) branch of the upstream [Graal repository](https://github.com/oracle/graal)) for a community supported LTS version of Graal 23.1 for OpenJDK 21 it is possible to build the GraalVM compiler from [graalvm-community-jdk21u](https://github.com/graalvm/graalvm-community-jdk21u) repository repository with an unmodified OpenJDK 21u. The [graalvm-community-jdk21u](https://github.com/graalvm/graalvm-community-jdk21u)
+repository already contains all the relevant GraalVM changes from the corresponding Mandrel repository and the community keeps it buildable with the latest updates of OpenJDK 21. In fact, [graalvm-community-jdk21u](https://github.com/graalvm/graalvm-community-jdk21u) has now become the new upstream for the [`mandrel/23.1`](https://github.com/graalvm/mandrel/tree/mandrel/23.1) branch of the [Mandrel](https://github.com/graalvm/mandrel) repository.
+
+##### Building libgraal from graalvm-community-jdk21u
+
+GraalVM requires a build JDK with static versions of the native libraries because they will be linked statically into the native image produced by the native image builder. Since JDK 11, these static libraries can be created as follows:
+
+```bash
+$ git clone https://github.com/openjdk/jdk21u-dev
+$ cd jdk21u-dev
+$ git checkout jdk-21.0.4-ga
+$ configure ...
+$ make graal-builder-image
+$ export JAVA_HOME=<path-to>/jdk21u-dev/images/graal-builder-jdk
+```
+We also need the correct version of `mx` on the `PATH` (see [Building GraalJS](#building-graaljs)).
+```
+$ export PATH=<path-to>/Graal/mx:$PATH
+```
+Finally we can clone the community version of Graal 23.1 and build libgraal:
+```bash
+$ git clone https://github.com/graalvm/graalvm-community-jdk21u
+$ cd graalvm-community-jdk21u/vm
+$ MX_ALT_OUTPUT_ROOT=/tmp/libgraal-23.1 mx --env libgraal build \
+  -dependencies libjvmcicompiler.so.image
+```
+
+`libjvmcicompiler.so` can be found under `$MX_ALT_OUTPUT_ROOT/sdk/linux-amd64/libjvmcicompiler.so.image/`
+
 ##### Building libgraal with Mandrel and OpenJDK
 
 While Mandrel is compatible with upstream OpenJDK, every new OpenJDK update release can introduce changes which require fixes to Mandrel (e.g. the [downport](https://github.com/openjdk/jdk17u/commit/a06047acce82f60b5ca193a7b2aa329ed24b46f4) of "[JDK-8168469: Memory leak in JceSecurity](https://bugs.openjdk.org/browse/JDK-8168469)" to JDK 17.0.10 caused a build failure in Mandrel which had to be fixed with "[[23.0] Mandrel 23.0 fails to build with JDK 17.0.10-EA](https://github.com/graalvm/mandrel/issues/607)").
@@ -161,8 +222,6 @@ $ mx --env libgraal build
 ...
 ```
 
-By default `mx` places the build artifacts into the `mxbuild/` subdirectory, but not only in the current directory but also in sibling directories /e.g. `../sdk/mxbuild/`, `../compiler/mxbuild` etc. which can be a little confusing. If you want to keep the source directory clean, you can use the `MX_ALT_OUTPUT_ROOT` environment variable to specify an alternative output directory for all build artifacts.
-
 Notice that building `mandrel-23.1.2.0-Final` with OpenJDK 17 is possible with a patch ([fix_mandrel-23.1.2.0-Final_on_jdk17.patch](./data/fix_mandrel-23.1.2.0-Final_on_jdk17.patch)):
 ```bash
 $ cd ..
@@ -182,6 +241,8 @@ Your Java runtime '17.0.10+7-LTS' with compiler version '23.1.2' is incompatible
 The Java runtime version must be greater or equal to JDK '21' and smaller than JDK '25'.
 Update your Java runtime to resolve this.
 ```
+
+By default `mx` places the build artifacts into the `mxbuild/` subdirectory, but not only in the current directory but also in sibling directories /e.g. `../sdk/mxbuild/`, `../compiler/mxbuild` etc. which can be a little confusing. If you want to keep the source directory clean, you can use the `MX_ALT_OUTPUT_ROOT` environment variable to specify an alternative output directory for all build artifacts.
 
 ### GraalVM Native Image
 
