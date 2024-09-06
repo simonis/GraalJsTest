@@ -6,56 +6,71 @@ import java.io.InputStreamReader;
 import org.graalvm.polyglot.Context;
 import org.graalvm.polyglot.Engine;
 import org.graalvm.polyglot.PolyglotException;
+import org.graalvm.polyglot.Source;
 import org.graalvm.polyglot.Value;
 
 public class SimpleCompilation {
   public static void main(String[] args) throws Exception {
+
     Engine engine = Engine.newBuilder("js")
       // Needed for -Dpolyglot.engine.TraceCompilation
       .allowExperimentalOptions(true)
+      .option("cpusampler", System.getProperty("cpusampler", "false"))
+      .option("cpusampler.Output", System.getProperty("cpusampler.Output", "histogram"))
+      .option("cpusampler.OutputFile", System.getProperty("cpusampler.OutputFile", "/tmp/SimpleCompilation_cpusampler.txt"))
+      .option("cpusampler.Period", System.getProperty("cpusampler.Period", "10")) // in ms
+      .option("cpusampler.ShowTiers", System.getProperty("cpusampler.ShowTiers", "true"))
+      .option("cpusampler.SampleContextInitialization", "true")
+      .option("cpusampler.SampleInternal", "true")
       .build();
     System.out.println(engine.getClass().getModule());
-    try (Context context = Context.newBuilder("js")
+    try (Context context = Context.newBuilder()
          .engine(engine)
          .build()) {
-      context.eval("js", """
-function add(x, y) {
-  return x + y;
-}
-function sub(x, y) {
-  return x - y;
-}
-function mul(x, y) {
-  return x * y;
-}
-function div(x, y) {
-  return x / y;
-}
-""");
+
+      String js = """
+                  function test(x) {
+                    let a = square5_loop(x);
+                    let b = square5_simple(x);
+                    let c = pow2(x);
+                    return a == b && b == c;
+                  }
+                  function square5_loop(x) {
+                    let sum = 0;
+                    for (let i = x; i > 0; i--) {
+                      sum += x;
+                    }
+                    return sum;
+                  }
+                  function square5_simple(x) {
+                    let sum = x + x + x + x + x;
+                    return sum;
+                  }
+                  function pow2(x) {
+                    return Math.pow(x, 2);
+                  }
+                  function main(arg) {
+                    for (let i = 0; i < 100000; i++) {
+                      test(arg);
+                    }
+                  }
+                  """;
+      Source source = Source.newBuilder("js", js, "test.js").build();
+
+      context.eval(source);
       Value jsBindings = context.getBindings("js");
-      Value add = jsBindings.getMember("add");
-      assert add.canExecute();
-      Value sub = jsBindings.getMember("sub");
-      assert sub.canExecute();
-      Value mul = jsBindings.getMember("mul");
-      assert mul.canExecute();
-      Value div = jsBindings.getMember("div");
-      assert div.canExecute();
-      for (int i = 1 ; i <= 10_000; i++) {
-        int r = add.execute(i, i).asInt();
-        assert r == i + i;
-        r = sub.execute(i, i).asInt();
-        assert r == 0;
-        r = mul.execute(i, i).asInt();
-        assert r == i * i;
-        r = div.execute(i, i).asInt();
-        assert r == 1;
+      Value main = jsBindings.getMember("main");
+      assert main.canExecute();
+      int iterations = Integer.getInteger("iterations", 1);
+      for (int j = 0; j < iterations; j++) {
+        main.execute(5);
       }
-      BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
-      in.readLine();
-      for (int i = 1 ; i <= 10_000; i++) {
-        double r = add.execute((double)i, i).asDouble();
-        assert r == (double)i + i;
+      if (args.length > 0) {
+        BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
+        in.readLine();
+        for (int j = 0; j < iterations; j++) {
+          main.execute(5d);
+        }
       }
     }
   }

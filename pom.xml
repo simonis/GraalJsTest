@@ -45,6 +45,11 @@
           <artifactId>truffle-dsl-processor</artifactId>
           <version>${graalvm.version}</version>
         </dependency>
+        <dependency>
+          <groupId>org.graalvm.tools</groupId>
+          <artifactId>profiler-tool</artifactId>
+          <version>${graalvm.version}</version>
+        </dependency>
       </dependencies>
     </profile>
 
@@ -76,6 +81,11 @@
         <dependency>
           <groupId>org.graalvm.truffle</groupId>
           <artifactId>truffle-dsl-processor</artifactId>
+          <version>${graalvm.version}</version>
+        </dependency>
+        <dependency>
+          <groupId>org.graalvm.tools</groupId>
+          <artifactId>profiler-tool</artifactId>
           <version>${graalvm.version}</version>
         </dependency>
       </dependencies>
@@ -129,6 +139,11 @@
           <artifactId>js</artifactId>
           <version>${graalvm.version}</version>
         </dependency>
+        <dependency>
+          <groupId>org.graalvm.tools</groupId>
+          <artifactId>profiler</artifactId>
+          <version>${graalvm.version}</version>
+        </dependency>
       </dependencies>
     </profile>
   </profiles>
@@ -166,7 +181,7 @@
 	      <excludeTypes>pom</excludeTypes>
 	      <excludeGrouIds>org.ow2.asm,org.graalvm.compiler</excludeGrouIds>
               <!-- Unfortunately <excludeGrouIds> doesn't work, so we have to explicitely list all artifact ids -->
-	      <excludeArtifactIds>compiler,nashorn-core,asm,asm-commons,asm-tree,asm-util,asm-analysis</excludeArtifactIds>
+	      <excludeArtifactIds>compiler,nashorn-core,asm,asm-commons,asm-tree,asm-util,asm-analysis,profiler,profiler-tool,json</excludeArtifactIds>
             </configuration>
           </execution>
           <execution>
@@ -179,6 +194,18 @@
 	      <outputDirectory>${project.build.directory}/compiler-deps</outputDirectory>
 	      <includeGrouIds>org.graalvm.compiler</includeGrouIds>
 	      <includeArtifactIds>compiler</includeArtifactIds>
+            </configuration>
+          </execution>
+          <execution>
+            <id>profiler-dependencies</id>
+            <phase>package</phase>
+            <goals>
+              <goal>copy-dependencies</goal>
+            </goals>
+            <configuration>
+	      <outputDirectory>${project.build.directory}/profiler-deps</outputDirectory>
+	      <includeGrouIds>org.graalvm.tools</includeGrouIds>
+	      <includeArtifactIds>profiler,profiler-tool,json</includeArtifactIds>
             </configuration>
           </execution>
           <execution>
