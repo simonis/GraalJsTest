@@ -30,29 +30,38 @@ public class SimpleCompilation {
 
       String js = """
                   function test(x) {
-                    let a = square5_loop(x);
-                    let b = square5_simple(x);
-                    let c = pow2(x);
-                    return a == b && b == c;
+                    let a = test_pow(x);
+                    let b = test_iterate(x, Math.floor(a));
+                    let c = test_loop(x, b);
+                    return a + b + c;
                   }
-                  function square5_loop(x) {
+                  function test_loop(x, y) {
                     let sum = 0;
                     for (let i = x; i > 0; i--) {
-                      sum += x;
+                      sum += y;
                     }
                     return sum;
                   }
-                  function square5_simple(x) {
-                    let sum = x + x + x + x + x;
+                  function test_iterate(x, y) {
+                    let sum = 0, i = x;
+                    if (i-- > 0) sum += y;
+                    if (i-- > 0) sum += y;
+                    if (i-- > 0) sum += y;
+                    if (i-- > 0) sum += y;
+                    if (i-- > 0) sum += y;
                     return sum;
                   }
-                  function pow2(x) {
-                    return Math.pow(x, 2);
+                  function test_pow(x) {
+                    // The following will be optimized to `x * x * Math.sqrt(x)`
+                    // in com.oracle.truffle.js.builtins.math.PowNode::pow()
+                    return Math.pow(x, 2.5);
                   }
                   function main(arg) {
+                    let res = 0;
                     for (let i = 0; i < 100000; i++) {
-                      test(arg);
+                      res += test(arg);
                     }
+                    return res;
                   }
                   """;
       Source source = Source.newBuilder("js", js, "test.js").build();
