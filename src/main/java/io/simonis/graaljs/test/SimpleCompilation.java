@@ -52,9 +52,9 @@ public class SimpleCompilation {
                     return sum;
                   }
                   function test_pow(x) {
-                    // The following will be optimized to `x * x * Math.sqrt(x)`
+                    // `Math.pow(x, 2.5)` will be optimized to `x * x * Math.sqrt(x)`
                     // in com.oracle.truffle.js.builtins.math.PowNode::pow()
-                    return Math.pow(x, 2.5);
+                    return Math.pow(x, 2.5) * Math.pow(x/2, 1.5) * Math.pow(x/3, 0.5);
                   }
                   function main(arg) {
                     let res = 0;
@@ -72,7 +72,7 @@ public class SimpleCompilation {
       assert main.canExecute();
       int iterations = Integer.getInteger("iterations", 1);
       for (int j = 0; j < iterations; j++) {
-        main.execute(5);
+        main.execute(1 + (j % 5)); // See https://github.com/oracle/graaljs/pull/868
       }
       if (args.length > 0) {
         BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
