@@ -102,7 +102,39 @@ The file `common.json` in the `graaljs` repository contains the version of `mx` 
 
 Notice that although GraalVM `23.1` is targeted for JDK 21, the pure Java artifacts built from the tag `release/graal-vm/23.1` of these libraries can be build (and the results can be used) with OpenJDK 17 and later.
 
-The [release/graal-vm/23.1](https://github.com/oracle/graal/tree/release/graal-vm/23.1) branch for GraalVM `23.1` for JDK 21 isn't supported by Oracle any more (at least not publicly). It has been moved to the master branch of the new [https://github.com/graalvm/graalvm-community-jdk21u](https://github.com/graalvm/graalvm-community-jdk21u) repository which is now maintained by the community.The same is true for the [release/graal-vm/23.1](https://github.com/oracle/graaljs/tree/release/graal-vm/23.1) branch of the GraalJS repository. Until now there's no corresponding community repository for GraalJS 23.1 [but discussions to create one are underway](https://graalvm.slack.com/archives/CNBFR78F9/p1725034816736779).
+The [release/graal-vm/23.1](https://github.com/oracle/graal/tree/release/graal-vm/23.1) branch for GraalVM `23.1` for JDK 21 isn't supported by Oracle any more (at least not publicly). It has been moved to the master branch of the new [https://github.com/graalvm/graalvm-community-jdk21u](https://github.com/graalvm/graalvm-community-jdk21u) repository which is now maintained by the community. ~~The same is true for the [release/graal-vm/23.1](https://github.com/oracle/graaljs/tree/release/graal-vm/23.1) branch of the GraalJS repository. Until now there's no corresponding community repository for GraalJS 23.1 [but discussions to create one are underway](https://graalvm.slack.com/archives/CNBFR78F9/p1725034816736779)~~. At the [GraalVM Community Summit 2024](https://www.graalvm.org/community/meetup/) Oracle has agreed to continue to maintain GraalJS 23.1 in the [release/graal-vm/23.1](https://github.com/oracle/graaljs/tree/release/graal-vm/23.1) branch of the GraalJS repository, so currently a comunity repository for GraalJS is not required.
+
+#### IDE support
+
+`mx` can be used to [create IDE configurations](https://github.com/graalvm/mx/blob/master/docs/IDE.md) for IntelliJ (`mx intellijinit`), Eclipse (`mx eclipseinit`) and Netbeans (`mx netbeansinit`). The nice thing about these configurations is that they automatically include the project's dependencies (i.e. the "[suite](https://github.com/graalvm/mx/tree/master?tab=readme-ov-file#suites)" dependencies in `mx` terms). E.g. running `mx suites` in the `graaljs/graal-js/` directory will print:
+
+```bash
+$ mx suites | egrep '^[^ ].*'
+graal-js
+regex
+truffle
+sdk
+```
+
+Notice, how this includes the `regex`, `truffle` and `sdk` suites from the main Graal repository which are dependencies of `graal-js`. In order for this to work out of the box, the Graal repository has to be checked out in a sibling directory of the GraalJS repository like so:
+```
+├── Graal
+│   ├── graal
+│   │   ├── compiler
+│   │   ├── regex
+│   │   ├── truffle
+│   │   ├── sdk
+│   │   ...
+│   ├── graaljs
+│   │   ├── graal-js
+│   │   ├── graal-nodejs
+│   │   ...
+```
+
+The Graal compiler is not a static dependency of GraalJS, but it is possible to [dynamically import](https://github.com/graalvm/mx/blob/master/docs/dynamic-imports.md) the Compiler suite as well in order to create a project which includes the sources of GraalJS together with the ones of the Truffle framework and the Graal Compiler in a single IDE project. So to cut a long story short, an IntelliJ project with the joined GraalJS, Truffle and Compiler sources can be generated from the `graaljs/graal-js/` directory with:
+```bash
+$ mx --dynamicimports /compiler intellijinit
+```
 
 ### GraalVM Truffle
 
@@ -180,7 +212,7 @@ Finally we can clone the community version of Graal 23.1 and build libgraal:
 $ git clone https://github.com/graalvm/graalvm-community-jdk21u
 $ cd graalvm-community-jdk21u/vm
 $ MX_ALT_OUTPUT_ROOT=/tmp/libgraal-23.1 mx --env libgraal build \
-  -dependencies libjvmcicompiler.so.image
+  --dependencies libjvmcicompiler.so.image
 ```
 
 `libjvmcicompiler.so` can be found under `$MX_ALT_OUTPUT_ROOT/sdk/linux-amd64/libjvmcicompiler.so.image/`
