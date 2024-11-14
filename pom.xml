@@ -16,12 +16,12 @@
 
   <profiles>
     <profile>
-      <id>graal-23-1-2</id>
+      <id>graal-23-1-5</id>
       <activation>
         <activeByDefault>true</activeByDefault>
       </activation>
       <properties>
-        <graalvm.version>23.1.2</graalvm.version>
+        <graalvm.version>23.1.5</graalvm.version>
       </properties>
       <dependencies>
         <dependency>
