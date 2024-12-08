@@ -96,6 +96,68 @@ $ ls -1 /tmp/graaljs-23.1/*/dists/*.jar
 ```
 </details>
 
+You can also build GraalJS together with the Graal compiler (i.e. `jargraal`) and the Graal tools (which contain the builtin Truffle profiler) by dynamically importing the compiler and tools suites:
+
+```bash
+$ MX_ALT_OUTPUT_ROOT=/tmp/graaljs-master mx \
+  --dynamicimports /compiler --dynamicimports /tools \
+  build --targets GRAALJS,GRAALJS_SCRIPTENGINE,TRUFFLE_RUNTIME,TRUFFLE_COMPILER,POLYGLOT,GRAAL,TRUFFLE_PROFILER
+```
+
+In that case the output directory will look as follows:
+
+<details>
+  <summary>GraalJS and Graal Compiler build artifacts</summary>
+
+```bash
+$ ls -1 /tmp/graaljs-master/*/dists/*.jar
+/tmp/graaljs-master/compiler/dists/graal.jar
+/tmp/graaljs-master/compiler/dists/graal-processor.jar
+/tmp/graaljs-master/graal-js/dists/graaljs.jar
+/tmp/graaljs-master/graal-js/dists/graaljs-scriptengine.jar
+/tmp/graaljs-master/graal-js/dists/truffle-js-factory-processor.jar
+/tmp/graaljs-master/regex/dists/tregex.jar
+/tmp/graaljs-master/sdk/dists/collections.jar
+/tmp/graaljs-master/sdk/dists/jniutils.jar
+/tmp/graaljs-master/sdk/dists/nativeimage.jar
+/tmp/graaljs-master/sdk/dists/polyglot.jar
+/tmp/graaljs-master/sdk/dists/word.jar
+/tmp/graaljs-master/tools/dists/truffle-profiler.jar
+/tmp/graaljs-master/truffle/dists/truffle-api.jar
+/tmp/graaljs-master/truffle/dists/truffle-compiler.jar
+/tmp/graaljs-master/truffle/dists/truffle-dsl-processor.jar
+/tmp/graaljs-master/truffle/dists/truffle-icu4j.jar
+/tmp/graaljs-master/truffle/dists/truffle-json.jar
+/tmp/graaljs-master/truffle/dists/truffle-libgraal-processor.jar
+/tmp/graaljs-master/truffle/dists/truffle-runtime.jar
+/tmp/graaljs-master/truffle/dists/truffle-xz.jar
+```
+</details>
+
+You can now execute an applications which uses GraalJS with Graal Compiler support with a default upstream version of OpenJDK by adding the following options to your command line:
+
+```bash
+-XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI \
+--module-path \
+$MX_ALT_OUTPUT_ROOT/truffle/dists/truffle-api.jar:\
+$MX_ALT_OUTPUT_ROOT/truffle/dists/truffle-runtime.jar:\
+$MX_ALT_OUTPUT_ROOT/truffle/dists/truffle-compiler.jar:\
+$MX_ALT_OUTPUT_ROOT/truffle/dists/truffle-dsl-processor.jar:\
+$MX_ALT_OUTPUT_ROOT/truffle/dists/truffle-icu4j.jar:\
+$MX_ALT_OUTPUT_ROOT/regex/dists/tregex.jar:\
+$MX_ALT_OUTPUT_ROOT/graal-js/dists/graaljs.jar:\
+$MX_ALT_OUTPUT_ROOT/sdk/dists/jniutils.jar:\
+$MX_ALT_OUTPUT_ROOT/sdk/dists/word.jar:\
+$MX_ALT_OUTPUT_ROOT/sdk/dists/polyglot.jar:\
+$MX_ALT_OUTPUT_ROOT/sdk/dists/collections.jar:\
+$MX_ALT_OUTPUT_ROOT/sdk/dists/nativeimage.jar:\
+$MX_ALT_OUTPUT_ROOT/tools/dists/truffle-profiler.jar:\
+$MX_ALT_OUTPUT_ROOT/truffle/dists/truffle-json.jar \
+--add-modules org.graalvm.polyglot \
+--upgrade-module-path \
+$MX_ALT_OUTPUT_ROOT/compiler/dists
+```
+
 To build GraalJS you have to check out the Graal repository at the same directory level like the GraalJS repository (as showed in the build instructions above). If you don't do this, `mx build` will automatically clone the Graal repository at the commit specified in the `imports` section of `./graal-js/mx.graal-js/suite.py`.
 
 The file `common.json` in the `graaljs` repository contains the version of `mx` that should be used for building GraalJS. It should be the same like `mx_version` in the `./graal` repository if both repositories are synced to the same tag or branch (e.g. `release/graal-vm/23.1` in this example).
@@ -131,10 +193,12 @@ Notice, how this includes the `regex`, `truffle` and `sdk` suites from the main 
 │   │   ...
 ```
 
-The Graal compiler is not a static dependency of GraalJS, but it is possible to [dynamically import](https://github.com/graalvm/mx/blob/master/docs/dynamic-imports.md) the Compiler suite as well in order to create a project which includes the sources of GraalJS together with the ones of the Truffle framework and the Graal Compiler in a single IDE project. So to cut a long story short, an IntelliJ project with the joined GraalJS, Truffle and Compiler sources can be generated from the `graaljs/graal-js/` directory with:
+The Graal compiler is not a static dependency of GraalJS, but it is possible to [dynamically import](https://github.com/graalvm/mx/blob/master/docs/dynamic-imports.md) the Compiler suite as well in order to create a project which includes the sources of GraalJS together with the ones of the Truffle framework and the Graal Compiler in a single IDE project. So to cut a long story short, an IntelliJ project with the joined GraalJS, Truffle, the Compiler and the Tools sources (including the Truffle built-in profiler) can be generated from the `graaljs/graal-js/` directory with:
 ```bash
-$ mx --dynamicimports /compiler intellijinit
+$ mx --dynamicimports /compiler --dynamicimports /tools intellijinit
 ```
+
+See Foivos Zakkak's [Getting started with GraalVM development](https://foivos.zakkak.net/tutorials/getting_started_with_graalvm_development/)
 
 ### GraalVM Truffle
 
