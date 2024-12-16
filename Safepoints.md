@@ -4,9 +4,11 @@ The Truffle framework implements its own, cooperative safepoint mechanism for Tr
 
 ### HotSpot Safepoints
 
-HotSpot's Safepoints are mainly used to coordinate and synchronize Java application threads with VM-internal operations like GC, class redefinition, code cache management, etc. A VM safpoint rolls all (or a subset - see [JEP 312: Thread-Local Handshakes](https://openjdk.org/jeps/312)) of the Java application threads forward to a known state and stops them there for the time required to execute a specific VM operation. Notice that you can not execute Java code at a VM safepoint - all the VM operations executed at a VM safeoint are implemented natively in the HotSpot JVM.
+HotSpot's Safepoints are mainly used to coordinate and synchronize Java application threads with VM-internal operations like GC, class redefinition, code cache management, etc. A VM safpoint rolls all (or a subset - see [JEP 312: Thread-Local Handshakes](https://openjdk.org/jeps/312)) of the Java application threads forward to a known state and stops them there for the time required to execute a specific VM operation. Notice that you can not execute Java code at a VM safepoint - all the VM operations executed at a VM safepoint are implemented natively in the HotSpot JVM.
 
-Safepointing is a cooperative mechanism. This means that Java threads can not be interrupted at any specific position if they execute optimized, Just-In-Time (JIT) compiled code. Instead, the Hotspot JVM adds safepoint polls at back-edges of uncounted loops and at the return from function calls. This ensures that safepoints can usually be reached in a timely manner to guarantee low-latency for operations like GC which have to be executed at the safepoint. Still, the time to reach a safpoint (i.e. "Time To Safepoint" or TTS) can be a problem in some cases (see e.g. [Math Intrinsics & Time To Safepoint (TTS)](https://simonis.github.io/HotspotIntrinsics/intrinsics.xhtml#/8/2) or the `-XX:+UseCountedLoopSafepoints` command line options which was added by [JDK-6869327: Add new C2 flag to keep safepoints in counted loops](https://bugs.openjdk.org/browse/JDK-6869327)).
+Safepointing is a cooperative mechanism. This means that Java threads can not be interrupted at any arbitrary position, no matter whether they are executed in the interpreter or if they run optimized, Just-In-Time (JIT) compiled code. Instead, the Hotspot JVM adds safepoint polls to both, the interpreter as well as to generated JIT-compiled native code. For the interpreter, safpoints are implemented as follows: Hotspot is using a so called [Template Interpreter](https://simonis.github.io/Joker2014/joker2014.html#(4)), i.e. it pre-generates native machine code snippets for each Java bytecode and references all these bytecode templates from a dispatch table which can be indexed by the currently executed Java byetcode. If a safepoint has been requested, the JVM just switches the default interpreter dispatch table to an alternative table where all the referenced bytecode snippets first check for the safepoint condition and suspend the execution of that thread until the safepoint ends. This means that in the interpreter, execution of Java code can be interrupted at bytecode granularity (although the machine code for some Java bytecodes can contain several hundred assembler instructions).
+
+For JIT-compiled, native code, the JIT compiler adds safepoint polls at back-edges of uncounted loops and at the return from function calls (which results in a much higher granularity compered to the interpreter case). This ensures that safepoints can usually be reached in a timely manner to guarantee low-latency for [operations like GC which have to be executed at a safepoint](https://simonis.github.io/hotspot_internals/hotspot_internals.xhtml#/6/1). Still, the time to reach a safpoint (i.e. "Time To Safepoint" or TTS) can be a problem in some cases (see e.g. [Math Intrinsics & Time To Safepoint (TTS)](https://simonis.github.io/HotspotIntrinsics/intrinsics.xhtml#/8/2) or the `-XX:+UseCountedLoopSafepoints` command line options which was added by [JDK-6869327: Add new C2 flag to keep safepoints in counted loops](https://bugs.openjdk.org/browse/JDK-6869327)).
 
 Another issue with HotSpot Safepoints is the so called "Safepoint Bias". Because safepoints are only added by the JIT-compilers at specific positions like loops and function calls, tools which rely on safepointing (e.g. some Profilers) only get a *biased* view of the applications they analyze. E.g. the well-known tools like [`jstack`](https://docs.oracle.com/en/java/javase/21/docs/specs/man/jstack.html) rely on safepoints which means that the thread dumps they create might miss methods inlined by the JIT compilers because they don't contain any safepoints any more.
 
@@ -18,9 +20,9 @@ The following description of Truffle Safepoints is taken right from the [Truffle
 
 > *As of 21.1 Truffle has support for guest language safepoints. Truffle safepoints allow to interrupt the guest language execution to perform thread local actions submitted by a language or tool. A safepoint is a location during the guest language execution where the state is consistent and other operations can read its state.*
 
-Truffle safepoints (i.e. [`com.oracle.truffle.api.TruffleSafepoint`](https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/TruffleSafepoint.html)) are implemented in Java and they work in Java, so in contrast to HotSpot safepoints it is possible to execute Java code at Truffle safepoints. They work by registering [ThreadLocalActions](https://github.com/oracle/graal/blob/master/truffle/docs/Safepoints.md#thread-local-actions) which will then be executed locally by every thread once it reaches a Truffle safepoint.
+Truffle safepoints (i.e. [`com.oracle.truffle.api.TruffleSafepoint`](https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/TruffleSafepoint.html)) are implemented in Java and they work in Java, so in contrast to HotSpot safepoints it is possible to execute Java code at Truffle safepoints. They work by registering [ThreadLocalActions](https://github.com/oracle/graal/blob/master/truffle/docs/Safepoints.md#thread-local-actions) which will then be executed locally by every thread, once it reaches a Truffle safepoint.
 
-Although their implementation requires native support in the VM (see [Implementation details](#implementation-details)), Truffle safepoints are "application-level" safepoints. Everyone can trigger a safepoint on all or on a selected subset of active polyglot threads by calling [`submitThreadLocal(..)`](https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/TruffleLanguage.Env.html#submitThreadLocal(java.lang.Thread%5B%5D,com.oracle.truffle.api.ThreadLocalAction)) on either a [language](https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/TruffleLanguage.Env.html) or an [instrument](https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/instrumentation/TruffleInstrument.Env.html) environment:
+Truffle safepoints are "application-level" safepoints. Everyone can trigger a safepoint on all or on a selected subset of active polyglot threads by calling [`submitThreadLocal(..)`](https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/TruffleLanguage.Env.html#submitThreadLocal(java.lang.Thread%5B%5D,com.oracle.truffle.api.ThreadLocalAction)) on either a [language](https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/TruffleLanguage.Env.html) or an [instrument](https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/instrumentation/TruffleInstrument.Env.html) environment:
 ```java
 Env env; // language or instrument environment
 
@@ -36,9 +38,38 @@ This call registers the corresponding action with the selected threads and arms 
 
 Various options like `-Dpolyglot.engine.SafepointALot=true`, `-Dpolyglot.engine.TraceMissingSafepointPollInterval=<ms>` or `-Dpolyglot.engine.TraceThreadLocalActions=true` exist for debugging Truffle safepoints (see [Safepoints.md](https://github.com/oracle/graal/blob/master/truffle/docs/Safepoints.md) for more details).
 
-#### Implementation details
+#### Implementation details (for [GraalVM 21.3](https://github.com/oracle/graal/tree/release/graal-vm/21.3))
 
-Truffle safepoints are implemented with the help of a special field in HotSpot's `JavaThread` class which is created for and mirrors every native Java thread (i.e. `java.lang.Thread`):
+The Truffle framework is implemented in pure Java and can run on any Java SE compliant JVM. In such a case, Safepoint polling is implemented with the help of an `AtomicInteger` field in [`DefaultThreadLocalHandshake.java`](https://github.com/oracle/graal/blob/c64165141b0b7e5302573d712966b3f514cf79f5/truffle/src/com.oracle.truffle.api/src/com/oracle/truffle/api/impl/DefaultThreadLocalHandshake.java) as follows:
+```java
+final class DefaultThreadLocalHandshake extends ThreadLocalHandshake {
+    static final DefaultThreadLocalHandshake SINGLETON = new DefaultThreadLocalHandshake();
+    ...
+    /*
+     * Number of active pending threads. Allows to check the active threads more efficiently.
+     */
+    private static final AtomicInteger PENDING_COUNT = new AtomicInteger();
+    ...
+    @Override
+    public void poll(Node enclosingNode) {
+        int count = PENDING_COUNT.get();
+        assert count >= 0 : "inconsistent pending state";
+        if (count > 0) {
+            SINGLETON.processHandshake(enclosingNode);
+        }
+    }
+    ...
+    @Override
+    protected void setFastPending(Thread t) {
+        PENDING_COUNT.incrementAndGet();
+    }
+    @Override
+    protected void clearFastPending() {
+        PENDING_COUNT.decrementAndGet();
+    }
+```
+
+However, if Truffle is running on a HotSpot JVM with JVMCI support, safepoints are implemented with the help of a special field in HotSpot's `JavaThread` class which is created for and mirrors every native Java thread (i.e. `java.lang.Thread`):
 ```cpp
 class JavaThread: public Thread {
   ...
@@ -286,7 +317,7 @@ Thread: 0x00007ffff1e94bf0  [0x39c29] State: _running _at_poll_safepoint 0
   ...
 ```
 
-Once this code gets partially evaluated and compiled, `HotSpotThreadLocalHandshake::poll()` will be replaced (i.e. *lowered*) by [`HotSpotTruffleSafepointLoweringSnippet::pollSnippet()`]() which will in turn get intrinsified by the Graal compiler (see [`HotSpotTruffleSafepointLoweringSnippet.java`](https://github.com/oracle/graal/blob/master/compiler/src/jdk.graal.compiler/src/jdk/graal/compiler/truffle/hotspot/HotSpotTruffleSafepointLoweringSnippet.java) for the details):
+Once this code gets partially evaluated and compiled, `HotSpotThreadLocalHandshake::poll()` will be replaced (i.e. *lowered*) by [`HotSpotTruffleSafepointLoweringSnippet::pollSnippet()`](https://github.com/oracle/graal/blob/c64165141b0b7e5302573d712966b3f514cf79f5/compiler/src/org.graalvm.compiler.truffle.compiler.hotspot/src/org/graalvm/compiler/truffle/compiler/hotspot/HotSpotTruffleSafepointLoweringSnippet.java#L87-L100) which will in turn get intrinsified by the Graal compiler (see [`HotSpotTruffleSafepointLoweringSnippet.java`](https://github.com/oracle/graal/blob/c64165141b0b7e5302573d712966b3f514cf79f5/compiler/src/org.graalvm.compiler.truffle.compiler.hotspot/src/org/graalvm/compiler/truffle/compiler/hotspot/HotSpotTruffleSafepointLoweringSnippet.java) for the details):
 ```java
 public final class HotSpotTruffleSafepointLoweringSnippet implements Snippets {
     ....
@@ -344,7 +375,7 @@ In compiled code the safepoint then folds down to a single memory read and a cal
      ...
 ```
 
-In the case the safepoint is armed, calling the thread local action from the compiled method through the `Stub<HotSpotThreadLocalHandshake.doHandshake(Object)void>` stub looks as follows:
+If the safepoint is armed, calling the thread local action from the compiled method through the `Stub<HotSpotThreadLocalHandshake.doHandshake(Object)void>` stub looks as follows:
 
 ```java
 (gdb) call pns($sp, $rbp, $pc)
