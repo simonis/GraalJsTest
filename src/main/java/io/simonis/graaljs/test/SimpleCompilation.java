@@ -20,8 +20,8 @@ public class SimpleCompilation {
       .option("cpusampler.OutputFile", System.getProperty("cpusampler.OutputFile", "/tmp/SimpleCompilation_cpusampler.txt"))
       .option("cpusampler.Period", System.getProperty("cpusampler.Period", "10")) // in ms
       .option("cpusampler.ShowTiers", System.getProperty("cpusampler.ShowTiers", "true"))
-      .option("cpusampler.SampleContextInitialization", "true")
-      .option("cpusampler.SampleInternal", "true")
+      .option("cpusampler.SampleInternal", System.getProperty("cpusampler.SampleInternal", "true"))
+      .option("cpusampler.SampleContextInitialization", System.getProperty("cpusampler.SampleContextInitialization", "false"))
       .build();
     System.out.println(engine.getClass().getModule());
     try (Context context = Context.newBuilder()
@@ -29,18 +29,23 @@ public class SimpleCompilation {
          .build()) {
 
       String js = """
+                  function main(arg) {
+                    let res = 0;
+                    for (let i = 0; i < 100000; i++) {
+                      res += test(arg);
+                    }
+                    return res;
+                  }
                   function test(x) {
                     let a = test_pow(x);
                     let b = test_iterate(x, Math.floor(a));
                     let c = test_loop(x, b);
                     return a + b + c;
                   }
-                  function test_loop(x, y) {
-                    let sum = 0;
-                    for (let i = x; i > 0; i--) {
-                      sum += y;
-                    }
-                    return sum;
+                  function test_pow(x) {
+                    // `Math.pow(x, 2.5)` will be optimized to `x * x * Math.sqrt(x)`
+                    // in com.oracle.truffle.js.builtins.math.PowNode::pow()
+                    return Math.pow(x, 2.5) * Math.pow(x/2, 1.5) * Math.pow(x/3, 0.5);
                   }
                   function test_iterate(x, y) {
                     let sum = 0, i = x;
@@ -51,17 +56,12 @@ public class SimpleCompilation {
                     if (i-- > 0) sum += y;
                     return sum;
                   }
-                  function test_pow(x) {
-                    // `Math.pow(x, 2.5)` will be optimized to `x * x * Math.sqrt(x)`
-                    // in com.oracle.truffle.js.builtins.math.PowNode::pow()
-                    return Math.pow(x, 2.5) * Math.pow(x/2, 1.5) * Math.pow(x/3, 0.5);
-                  }
-                  function main(arg) {
-                    let res = 0;
-                    for (let i = 0; i < 100000; i++) {
-                      res += test(arg);
+                  function test_loop(x, y) {
+                    let sum = 0;
+                    for (let i = x; i > 0; i--) {
+                      sum += y;
                     }
-                    return res;
+                    return sum;
                   }
                   """;
       Source source = Source.newBuilder("js", js, "test.js").build();

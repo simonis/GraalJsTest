@@ -1,3 +1,107 @@
+## The [Truffle Profiler](https://www.graalvm.org/latest/graalvm-as-a-platform/language-implementation-framework/Profiling/)
+
+The Truffle framework comes with a simple, sampling based profiler for Truffle languages built on top of the [Truffle safepoints](./Safepoints.md). It can either be used manually by leveraging the [`com.oracle.truffle.tools.profiler.CPUSampler`](https://www.graalvm.org/tools/javadoc/com/oracle/truffle/tools/profiler/CPUSampler.html) class or configured directly on the Truffle engine as follows:
+```java
+Engine engine = Engine.newBuilder("js")
+  .option("cpusampler", System.getProperty("cpusampler", "false"))
+  .option("cpusampler.Output", System.getProperty("cpusampler.Output", "calltree"))
+  .option("cpusampler.OutputFile", System.getProperty("cpusampler.OutputFile", "/tmp/SimpleCompilation_cpusampler.txt"))
+  .option("cpusampler.Period", System.getProperty("cpusampler.Period", "10")) // in ms
+  .option("cpusampler.ShowTiers", System.getProperty("cpusampler.ShowTiers", "true"))
+  .option("cpusampler.SampleInternal", System.getProperty("cpusampler.SampleInternal", "false"))
+  .option("cpusampler.SampleContextInitialization", System.getProperty("cpusampler.SampleContextInitialization", "false"))
+  .build();
+```
+For the following analysis, we will use a simple JavaScript program which uses sevelar language features like function calls, loops and builtin library functions:
+```JavaScript
+function main(arg) {
+  let res = 0;
+  for (let i = 0; i < 100000; i++) {
+    res += test(arg);
+  }
+  return res;
+}
+function test(x) {
+  let a = test_pow(x);
+  let b = test_iterate(x, Math.floor(a));
+  let c = test_loop(x, b);
+  return a + b + c;
+}
+function test_pow(x) {
+  return Math.pow(x, 2.5) * Math.pow(x/2, 1.5) * Math.pow(x/3, 0.5);
+}
+function test_iterate(x, y) {
+  let sum = 0, i = x;
+  if (i-- > 0) sum += y;
+  if (i-- > 0) sum += y;
+  if (i-- > 0) sum += y;
+  if (i-- > 0) sum += y;
+  if (i-- > 0) sum += y;
+  return sum;
+}
+function test_loop(x, y) {
+  let sum = 0;
+  for (let i = x; i > 0; i--) {
+    sum += y;
+  }
+  return sum;
+}
+```
+We save this program in a String, create a [`Source`](https://www.graalvm.org/sdk/javadoc/org/graalvm/polyglot/Source.html) object and evaluate it:
+```Java
+String js = """
+            function main(arg) {
+            ...
+            """;
+Source source = Source.newBuilder("js", js, "test.js").build();
+context.eval(source);
+```
+Once we've done this, we can execute the JavaScript `main()` function from Java (the [full program is available in `SimpleCompilation.java`](./src/main/java/io/simonis/graaljs/test/SimpleCompilation.java)):
+```Java
+Value jsBindings = context.getBindings("js");
+Value main = jsBindings.getMember("main");
+for (int j = 0; j < iterations; j++) {
+  main.execute(j % 5);
+}
+```
+
+If we run this on a non-JVMCI capable JVM (or with `-XX:-EnableJVMCI`) for 100 `iterations` we will get the following profiler output in the file configured with `cpusampler.OutputFile`:
+```
+--------------------------------------------------------------------------------------------------------------------
+Sampling Call Tree. Recorded 1724 samples with period 10ms. Missed 30 samples.
+  Self Time: Time spent on the top of the stack.
+  Total Time: Time spent somewhere on the stack.
+  T0: Percent of time spent in interpreter.
+--------------------------------------------------------------------------------------------------------------------
+ Name           ||             Total Time    |   T0   ||              Self Time    |   T0   || Location
+--------------------------------------------------------------------------------------------------------------------
+ main           ||            17230ms  99.9% | 100.0% ||              340ms   2.0% | 100.0% || test.js~1-7:0-113
+  test          ||            16890ms  98.0% | 100.0% ||             1900ms  11.0% | 100.0% || test.js~8-13:115-246
+   test_pow     ||             6440ms  37.4% | 100.0% ||             6440ms  37.4% | 100.0% || test.js~14-18:248-467
+   test_loop    ||             4790ms  27.8% | 100.0% ||             4790ms  27.8% | 100.0% || test.js~28-34:662-768
+   test_iterate ||             3760ms  21.8% | 100.0% ||             3760ms  21.8% | 100.0% || test.js~19-27:469-660
+ :program       ||               10ms   0.1% | 100.0% ||               10ms   0.1% | 100.0% || test.js~1-34:0-769
+--------------------------------------------------------------------------------------------------------------------
+```
+The row labeled with `:program` denotes the time spent in JavaScript code when we evaluate the JavaScript source code (i.e. `context.eval(source)`). We actually don't execute any code there, so this time is minimal and only accounts for parsing our program. Besides that, we can see the self and total time of our JS functions. Notice how the `Location` column refers to the relative lines of the JS program that we've stored in the Java string `js` and to the virtual file `test.js` that we've specified when we created the `Source` object.
+
+If we set the `cpusampler.SampleInternal` option to `true`, we also get the time spent in the builtin functions `Math.pow()` and `Math.floor()`:
+
+```
+--------------------------------------------------------------------------------------------------------------------
+ Name           ||             Total Time    |   T0   ||              Self Time    |   T0   || Location
+--------------------------------------------------------------------------------------------------------------------
+ main           ||            16980ms  99.9% | 100.0% ||              380ms   2.2% | 100.0% || test.js~1-7:0-113
+  test          ||            16600ms  97.7% | 100.0% ||              570ms   3.4% | 100.0% || test.js~8-13:115-246
+   test_pow     ||             6600ms  38.8% | 100.0% ||               90ms   0.5% | 100.0% || test.js~14-18:248-467
+    Math.pow    ||             6510ms  38.3% | 100.0% ||             6510ms  38.3% | 100.0% || <builtin>~1:0
+   test_loop    ||             4460ms  26.3% | 100.0% ||             4460ms  26.3% | 100.0% || test.js~28-34:662-768
+   test_iterate ||             3400ms  20.0% | 100.0% ||             3400ms  20.0% | 100.0% || test.js~19-27:469-660
+   Math.floor   ||             1570ms   9.2% | 100.0% ||             1570ms   9.2% | 100.0% || <builtin>~1:0
+ :program       ||               10ms   0.1% | 100.0% ||               10ms   0.1% | 100.0% || test.js~1-34:0-769
+--------------------------------------------------------------------------------------------------------------------
+```
+
 ## Profiling various GraalJS configurations with [AsyncProfiler](https://github.com/async-profiler/async-profiler)
 
 - Running the [Octane](https://github.com/chromium/octane) `raytrace.js` benchmark without the GraalVM compiler:
