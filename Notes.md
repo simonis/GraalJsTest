@@ -96,6 +96,8 @@ $ ls -1 /tmp/graaljs-23.1/*/dists/*.jar
 ```
 </details>
 
+##### Building GraalJS together with the Graal Compiler
+
 You can also build GraalJS together with the Graal compiler (i.e. `jargraal`) and the Graal tools (which contain the builtin Truffle profiler) by dynamically importing the compiler and tools suites:
 
 ```bash
@@ -165,6 +167,43 @@ The file `common.json` in the `graaljs` repository contains the version of `mx` 
 Notice that although GraalVM `23.1` is targeted for JDK 21, the pure Java artifacts built from the tag `release/graal-vm/23.1` of these libraries can be build (and the results can be used) with OpenJDK 17 and later.
 
 The [release/graal-vm/23.1](https://github.com/oracle/graal/tree/release/graal-vm/23.1) branch for GraalVM `23.1` for JDK 21 isn't supported by Oracle any more (at least not publicly). It has been moved to the master branch of the new [https://github.com/graalvm/graalvm-community-jdk21u](https://github.com/graalvm/graalvm-community-jdk21u) repository which is now maintained by the community. ~~The same is true for the [release/graal-vm/23.1](https://github.com/oracle/graaljs/tree/release/graal-vm/23.1) branch of the GraalJS repository. Until now there's no corresponding community repository for GraalJS 23.1 [but discussions to create one are underway](https://graalvm.slack.com/archives/CNBFR78F9/p1725034816736779)~~. At the [GraalVM Community Summit 2024](https://www.graalvm.org/community/meetup/) Oracle has agreed to continue to maintain GraalJS 23.1 in the [release/graal-vm/23.1](https://github.com/oracle/graaljs/tree/release/graal-vm/23.1) branch of the GraalJS repository, so currently a comunity repository for GraalJS is not required.
+
+#### Building the Truffle Profiler
+
+The [Truffle Profiler](https://www.graalvm.org/latest/graalvm-as-a-platform/language-implementation-framework/Profiling/) is part of the tools sub-project contained in the `./tools/ sub-directory. It can be build as follows:
+
+```bash
+$ cd ./tools
+$ MX_ALT_OUTPUT_ROOT=/tmp/tools-unittests mx \
+  build --targets TRUFFLE_PROFILER,TRUFFLE_RUNTIME,TRUFFLE_PROFILER_TEST
+```
+The `TRUFFLE_RUNTIME` and `TRUFFLE_PROFILER_TEST` targets are only required if you also plan to run some of the unit tests. The Truffle profiler can then be found under `$MX_ALT_OUTPUT_ROOT/tools/dists/truffle-profiler.jar`.
+
+Afterwards, the profiler unit tests can be run as follows:
+```bash
+$ MX_ALT_OUTPUT_ROOT=/tmp/tools-unittests mx \
+  unittest --verbose ProfilerCLITest CPUSamplerTest
+```
+This will execute the [`ProfilerCLITest`](https://github.com/oracle/graal/blob/261c38a7a47dd87f13ec3cbe0fbb85cfdff17963/tools/src/com.oracle.truffle.tools.profiler.test/src/com/oracle/truffle/tools/profiler/test/ProfilerCLITest.java) and [`CPUSamplerTest`](https://github.com/oracle/graal/blob/261c38a7a47dd87f13ec3cbe0fbb85cfdff17963/tools/src/com.oracle.truffle.tools.profiler.test/src/com/oracle/truffle/tools/profiler/test/CPUSamplerTest.java) tests. Notice that the JDK for executing the tests will betaken from the `JAVA_HOME` environment variable and if that is a vanilla JDK, JVMCI will be disabled and the tests will be executed with the [`DefaultTruffleRuntime`](https://github.com/oracle/graal/blob/261c38a7a47dd87f13ec3cbe0fbb85cfdff17963/truffle/src/com.oracle.truffle.api/src/com/oracle/truffle/api/impl/DefaultTruffleRuntime.java), i.e. without Graal Compiler optimizations.
+
+Some tests like for example [`CPUSamplerTest::testTiers()`](https://github.com/oracle/graal/blob/261c38a7a47dd87f13ec3cbe0fbb85cfdff17963/tools/src/com.oracle.truffle.tools.profiler.test/src/com/oracle/truffle/tools/profiler/test/CPUSamplerTest.java#L338C17-L338C26) specifically test for the optimizing [`HotSpotTruffleRuntime`](https://github.com/oracle/graal/blob/261c38a7a47dd87f13ec3cbe0fbb85cfdff17963/truffle/src/com.oracle.truffle.runtime/src/com/oracle/truffle/runtime/hotspot/HotSpotTruffleRuntime.java) and only run if it is available:
+
+```java
+public void testTiers() {
+    Assume.assumeFalse(Truffle.getRuntime().getClass().toString().contains("Default"));
+```
+Others tests like for example [`ProfilerCLITest::testDefaultSampleHistogram()`](https://github.com/oracle/graal/blob/261c38a7a47dd87f13ec3cbe0fbb85cfdff17963/tools/src/com.oracle.truffle.tools.profiler.test/src/com/oracle/truffle/tools/profiler/test/ProfilerCLITest.java#L70) only run with the non-optimizing, `DefaultTruffleRuntime`.
+
+In order to exercise the tests which require an optimizing runtime on a default JDK, the unit tests can be run as follows:
+```bash
+$ MX_ALT_OUTPUT_ROOT=/tmp/tools-unittests mx \
+  unittest --verbose \
+    -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI \
+    --upgrade-module-path $MX_COMPILER_OUTPUT_ROOT/compiler/dists \
+  ProfilerCLITest CPUSamplerTest
+```
+where `$MX_COMPILER_OUTPUT_ROOT` denotes the output directory of a build containing the Graal Compiler as described for example in the section "[Building GraalJS together with the Graal Compiler
+](#building-graaljs-together-with-the-graal-compiler)".
 
 #### IDE support
 
@@ -275,11 +314,25 @@ Finally we can clone the community version of Graal 23.1 and build libgraal:
 ```bash
 $ git clone https://github.com/graalvm/graalvm-community-jdk21u
 $ cd graalvm-community-jdk21u/vm
-$ MX_ALT_OUTPUT_ROOT=/tmp/libgraal-23.1 mx --env libgraal build \
-  --dependencies libjvmcicompiler.so.image
+$ MX_ALT_OUTPUT_ROOT=/tmp/libgraal-23.1 \
+  mx --env libgraal \
+     build --dependencies libjvmcicompiler.so.image
 ```
 
 `libjvmcicompiler.so` can be found under `$MX_ALT_OUTPUT_ROOT/sdk/linux-amd64/libjvmcicompiler.so.image/`
+
+##### Building libgraal from the upstream Graal repository
+
+As of December 2024, it is possible to build the latest version of libgraal with the latest, unmodified version of OpenJDK (at the time of writing a pre-release of JDK 24) from the `graal/vm/` directory:
+```bash
+$ MX_ALT_OUTPUT_ROOT=/tmp/libgraal-master \
+  mx --dynamicimports /substratevm \
+     --components=lg \
+     --native-images=lib:jvmcicompiler \
+     --disable-installables=true \
+     build --targets libjvmcicompiler.so.image
+```
+The `--dynamicimports`, `--components`, `--native-images` and `--disable-installables` are an alternative for using `--env libgraal` as described above. The latter just takes the corresponding options from `graal/vm/mx.vm/libgraal`. I still don't know where I can find the target `libjvmcicompiler.so.image` because neither `mx suites` nor `mx graalvm-show` displays it? But witout `--targets libjvmcicompiler.so.image` the build takes longer and produces conisderable more output in `MX_ALT_OUTPUT_ROOT`.
 
 ##### Building libgraal with Mandrel and OpenJDK
 
