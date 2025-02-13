@@ -89,6 +89,69 @@ void afterAnalysis(AfterAnalysisAccess access) {
 }
 ```
 
+## Graal Compiler option handling
+
+The Graal compiler has a sophisticated way of declaring and managing options. The corresponding classes are located in the `jdk.graal.compiler.options` package which is also used by SubstrateVM.
+
+```java
+package jdk.graal.compiler.options;
+
+/**
+ * A key for an option. The value for an option is obtained from an {@link OptionValues} object.
+ */
+public class OptionKey<T> {
+    private final T defaultValue;
+    ...
+    public OptionKey(T defaultValue) {
+        this.defaultValue = defaultValue;
+    }}
+
+/**
+ * Describes the attributes of a static field {@linkplain Option option} and provides access to its
+ * {@linkplain OptionKey value}.
+ */
+public final class OptionDescriptor {
+
+    private final String name;
+    private final OptionType optionType;
+    private final Class<?> optionValueType;
+    private final String help;
+    private final List<String> extraHelp;
+    private final OptionKey<?> optionKey;
+    private final Class<?> declaringClass;
+    private final String fieldName;
+    private final OptionStability stability;
+    private final boolean deprecated;
+    private final String deprecationMessage;
+    ...
+}
+
+public interface OptionDescriptors extends Iterable<OptionDescriptor> {
+    /**
+     * Gets the {@link OptionDescriptor} matching a given option name or {@code null} if this option
+     * descriptor set doesn't contain a matching option name.
+     */
+    OptionDescriptor get(String value);
+}
+```
+With the `Option`/`OptionGroup` annotations, it becomes very easy to define and group new options as static fields of arbitrary classes.
+
+```java
+/**
+ * Describes the attributes of an option whose {@link OptionKey value} is in a static field
+ * annotated by this annotation type.
+ *
+ * @see OptionDescriptor
+ */
+@Retention(RetentionPolicy.SOURCE)
+@Target(ElementType.FIELD)
+public @interface Option {
+    ...
+}
+```
+
+E.g. many Graal Compiler options are defined in the [`GraalCompilerOptions`](https://github.com/oracle/graal/blob/4c10155e7b932e5cf636501dd90eba20630c284a/compiler/src/jdk.graal.compiler/src/jdk/graal/compiler/core/GraalCompilerOptions.java) class as follows:
+
 ```java
 /**
  * Options related to {@link GraalCompiler}.
@@ -100,6 +163,23 @@ public class GraalCompilerOptions {
     ...
 }
 ```
+
+When the Graal Compiler is built, these `Option` annotations will be processed by the Graal Compiler [`OptionProcessor`](https://github.com/oracle/graal/blob/4c10155e7b932e5cf636501dd90eba20630c284a/compiler/src/jdk.graal.compiler.processor/src/jdk/graal/compiler/options/processor/OptionProcessor.java):
+
+```java
+package jdk.graal.compiler.options.processor;
+/**
+ * Processes static fields annotated with {@code Option}. An {@code OptionDescriptors}
+ * implementation is generated for each top level class containing at least one such field. The name
+ * of the generated class for top level class {@code com.foo.Bar} is
+ * {@code com.foo.Bar_OptionDescriptors}.
+ */
+@SupportedAnnotationTypes({"jdk.graal.compiler.options.Option"})
+public class OptionProcessor extends AbstractProcessor {
+    ...
+}
+```
+which is registered in the [META-INF/services/javax.annotation.processing.Processor](https://github.com/oracle/graal/blob/4c10155e7b932e5cf636501dd90eba20630c284a/compiler/src/jdk.graal.compiler.processor/src/META-INF/services/javax.annotation.processing.Processor#L6C1-L6C53) of `graal-processor.jar`. For the `GraalCompilerOptions` example above, it will create the following `GraalCompilerOptions_OptionDescriptors` class which implements `OptionDescriptors`:
 
 ```java
 public class GraalCompilerOptions_OptionDescriptors implements OptionDescriptors {
@@ -114,7 +194,7 @@ public class GraalCompilerOptions_OptionDescriptors implements OptionDescriptors
                 /*help*/ "Print an informational line to the console for each completed compilation.",
                 /*declaringClass*/ GraalCompilerOptions.class,
                 /*fieldName*/ "PrintCompilation",
-                /*option*/ GraalCompilerOptions.PrintCompilation,
+                /*optionKey*/ GraalCompilerOptions.PrintCompilation,
                 /*stability*/ OptionStability.STABLE,
                 /*deprecated*/ false,
                 /*deprecationMessage*/ "");
@@ -122,9 +202,53 @@ public class GraalCompilerOptions_OptionDescriptors implements OptionDescriptors
         ...
         }
     }
-
+    @Override
+    public Iterator<OptionDescriptor> iterator() {
+        return new Iterator<>() {
+            int i = 0;
+            @Override
+            public boolean hasNext() {
+                return i < 7;
+            }
+            @Override
+            public OptionDescriptor next() {
+                switch (i++) {
+                    ...
+                    case 5: return get("PrintCompilation");
+                    case 6: return get("SystemicCompilationFailureRate");
+                }
+                throw new NoSuchElementException();
+            }
+        };
+    }
+}
 ```
 
+The build system (in [compiler/mx.compiler/mx_compiler.py](https://github.com/oracle/graal/blob/4c10155e7b932e5cf636501dd90eba20630c284a/compiler/mx.compiler/mx_compiler.py#L1296-L1312)):
+
+```python
+        elif arcname.endswith('_OptionDescriptors.class'):
+            ...
+                # Need to create service files for the providers of the
+                # jdk.internal.vm.ci.options.Options service created by
+                # jdk.internal.vm.ci.options.processor.OptionProcessor.
+                provider = arcname[:-len('.class'):].replace('/', '.')
+                service = 'jdk.graal.compiler.options.OptionDescriptors'
+                add_serviceprovider(service, provider, version)
+```
+
+Will take care, to register all the `OptionDescriptors` in `META-INF/services/jdk.graal.compiler.options.OptionDescriptors`:
+
+```java
+jdk.graal.compiler.core.GraalCompilerOptions_OptionDescriptors
+...
+```
+
+and the `module-info.class` file:
+
+```java
+    provides jdk.graal.compiler.options.OptionDescriptors with jdk.graal.compiler.core.GraalCompilerOptions_OptionDescriptors, ...
+```
 
 ```java
 @OptionGroup(prefix = "compiler.", registerAsService = false)
@@ -135,3 +259,101 @@ public class TruffleCompilerOptions {
     ...
 }
 ```
+
+## GraalVM SDK / Polyglot / Truffle option handling
+
+The GraalVM SDK provides a [public API for option handling](http://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/Option.html) (in the `org.graalvm.options` package) which is similar to the GraalVM options implementation:
+
+```java
+package org.graalvm.options;
+
+/**
+ * Represents the option key for an option specification.
+ */
+public final class OptionKey<T> {
+
+    private final OptionType<T> type;
+    private final T defaultValue;
+    ...
+}
+/**
+ * Represents metadata for a single option.
+ */
+public final class OptionDescriptor {
+
+    private final OptionKey<?> key;
+    private final String name;
+    private final String help;
+    private final OptionCategory category;
+    private final OptionStability stability;
+    private final boolean deprecated;
+    private final String deprecationMessage;
+    private final String usageSyntax;
+
+    OptionDescriptor(OptionKey<?> key, String name, String help, OptionCategory category, OptionStability stability, boolean deprecated, String deprecationMessage, String usageSyntax) {
+        ...
+    }
+    ...
+}
+/**
+ * An interface to a set of {@link OptionDescriptor}s.
+ */
+public interface OptionDescriptors extends Iterable<OptionDescriptor> {
+    ...
+}
+```
+
+The Truffle framework extends the GraalVM SDK option package with [`Option`](https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/Option.html)/[`Option.Group](https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/Option.Group.html) annotations which are similar to their `jdk.graal.compiler.options.Option`/`jdk.graal.compiler.options.OptionGroup` counterparts in the Graal Compiler.
+
+with these classes and annotations, the Truffle framework declares its own options e.g. as follows:
+
+```java
+package com.oracle.truffle.runtime;
+
+/**
+ * Truffle compilation options that can be configured per {@link Engine engine} instance. These
+ * options are accessed by the Truffle runtime and not the Truffle compiler, unlike
+ * jdk.graal.compiler.truffle.TruffleCompilerOptions
+ */
+@Option.Group("engine")
+public final class OptimizedRuntimeOptions {
+    ...
+    @Option(help = "Enable asynchronous truffle compilation in background threads (default: true)", usageSyntax = "true|false", category = OptionCategory.EXPERT) //
+    public static final OptionKey<Boolean> BackgroundCompilation = new OptionKey<>(true);
+    ...
+    public static OptionDescriptors getDescriptors() {
+        return new OptimizedRuntimeOptionsOptionDescriptors();
+    }
+```
+
+Notice that the class `OptimizedRuntimeOptionsOptionDescriptors` is generated at build time from the field names and `Option`/`Option.Group` annotations ([`TruffleOptionDescriptors`](https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/TruffleOptionDescriptors.html) extends [`OptionDescriptors`](https://www.graalvm.org/truffle/javadoc/org/graalvm/options/OptionDescriptors.html)):
+
+```java
+// CheckStyle: start generated
+package com.oracle.truffle.runtime;
+...
+@GeneratedBy(OptimizedRuntimeOptions.class)
+final class OptimizedRuntimeOptionsOptionDescriptors implements TruffleOptionDescriptors {
+
+    @Override
+    public OptionDescriptor get(String optionName) {
+        switch (optionName) {
+            ...
+            case "engine.BackgroundCompilation" :
+                return OptionDescriptor.newBuilder(OptimizedRuntimeOptions.BackgroundCompilation, "engine.BackgroundCompilation").deprecated(false).help("Enable asynchronous truffle compilation in background threads (default: true)").usageSyntax("true|false").category(OptionCategory.EXPERT).stability(OptionStability.EXPERIMENTAL).build();
+            ...
+        }
+    }
+
+    @Override
+    public Iterator<OptionDescriptor> iterator() {
+        return List.of(
+            ...
+            OptionDescriptor.newBuilder(OptimizedRuntimeOptions.BackgroundCompilation, "engine.BackgroundCompilation").deprecated(false).help("Enable asynchronous truffle compilation in background threads (default: true)").usageSyntax("true|false").category(OptionCategory.EXPERT).stability(OptionStability.EXPERIMENTAL).build(),
+            ...)
+        .iterator();
+    }
+}
+```
+
+

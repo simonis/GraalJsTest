@@ -401,7 +401,8 @@ By default `mx` places the build artifacts into the `mxbuild/` subdirectory, but
 - [The many ways of polyglot programming with GraalVM](https://medium.com/graalvm/3-ways-to-polyglot-with-graalvm-fb28c1542b45) by Michael Simons. Example on how to build a shared library from a Java program with GraalVM and access it from C using the Native Image C API.
 - [ABOUT THE TOOLING AVAILABLE TO CREATE NATIVE GRAALVM IMAGES.
 ](https://info.michael-simons.eu/2020/09/15/about-the-tooling-available-to-create-native-graalvm-images/) by Michael Simons. How to compile Neo4J into a native image (including substitution example).
-- [GraalVM JNI Invocation API](https://www.graalvm.org/latest/reference-manual/native-image/native-code-interoperability/JNIInvocationAPI/)
+- [GraalVM JNI Invocation API](https://www.graalvm.org/latest/reference-manual/native-image/native-code-interoperability/JNIInvocationAPI/) (on GitHub available as [https://github.com/oracle/graal/blob/master/docs/reference-manual/native-image/JNIInvocationAPI.md](JNIInvocationAPI.md))
 - [Embedding Truffle Languages](https://nirvdrum.com/2022/05/09/truffle-language-embedding.html) by Kevin Menard. Compares the usage of the Native Image C API and the JNI Invocation API for calling Java methods from an Native Image shared library.
 - [Understanding Class Initialization in GraalVM Native Image Generation](https://medium.com/graalvm/understanding-class-initialization-in-graalvm-native-image-generation-d765b7e4d6ed) by Christian Wimmer
 - [Updates on Class Initialization in GraalVM Native Image Generation](https://medium.com/graalvm/updates-on-class-initialization-in-graalvm-native-image-generation-c61faca461f7) by Christian Wimmer
+- [Native Image Substitutions](https://build-native-java-apps.cc/developer-guide/substitution/)
