@@ -250,6 +250,43 @@ and the `module-info.class` file:
     provides jdk.graal.compiler.options.OptionDescriptors with jdk.graal.compiler.core.GraalCompilerOptions_OptionDescriptors, ...
 ```
 
+
+```java
+    /**
+     * Gets an iterable of available {@link OptionDescriptors}.
+     */
+    @ExcludeFromJacocoGeneratedReport("contains libgraal-only path")
+    public static Iterable<OptionDescriptors> getOptionsLoader() {
+        if (IS_IN_NATIVE_IMAGE) {
+            System.out.println("===> getOptionsLoader()");
+            System.out.println("     " + (libgraalOptions == null ? "null" : "libgraalOptions"));
+            System.out.println("     " + OptionsParser.class.getClassLoader());
+            new Throwable().printStackTrace(System.out);
+            return List.of(new OptionDescriptorsMap(Objects.requireNonNull(libgraalOptions.descriptors, "missing options")));
+        }
+        boolean inLibGraal = libgraalOptions != null;
+        if (inLibGraal && IS_BUILDING_NATIVE_IMAGE) {
+            /*
+             * Graal code is being run in the context of the LibGraalClassLoader while building
+             * libgraal so use the LibGraalClassLoader to load the OptionDescriptors.
+             */
+            ClassLoader myCL = OptionsParser.class.getClassLoader();
+            return ServiceLoader.load(OptionDescriptors.class, myCL);
+        } else {
+            /*
+             * The Graal module (i.e., jdk.graal.compiler) is loaded by the platform class loader.
+             * Modules that depend on and extend Graal are loaded by the app class loader so use it
+             * (instead of the platform class loader) to load the OptionDescriptors.
+             */
+            ClassLoader loader = ClassLoader.getSystemClassLoader();
+            return ServiceLoader.load(OptionDescriptors.class, loader);
+        }
+    }
+```
+
+
+
+
 ```java
 @OptionGroup(prefix = "compiler.", registerAsService = false)
 public class TruffleCompilerOptions {
