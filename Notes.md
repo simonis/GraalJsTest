@@ -234,7 +234,7 @@ Notice, how this includes the `regex`, `truffle` and `sdk` suites from the main 
 
 The Graal compiler is not a static dependency of GraalJS, but it is possible to [dynamically import](https://github.com/graalvm/mx/blob/master/docs/dynamic-imports.md) the Compiler suite as well in order to create a project which includes the sources of GraalJS together with the ones of the Truffle framework and the Graal Compiler in a single IDE project. So to cut a long story short, an IntelliJ project with the joined GraalJS, Truffle, the Compiler and the Tools sources (including the Truffle built-in profiler) can be generated from the `graaljs/graal-js/` directory with:
 ```bash
-$ mx --dynamicimports /compiler --dynamicimports /tools intellijinit
+$ mx --dynamicimports /compiler --dynamicimports /tools --dynamicimports /substratevm intellijinit
 ```
 
 See Foivos Zakkak's [Getting started with GraalVM development](https://foivos.zakkak.net/tutorials/getting_started_with_graalvm_development/)

@@ -1,94 +1,3 @@
-# libgraal options internals
-
-The available libgraal options are collected at build time (i.e. when running the `native-image` tool) and triggered by the `LibGraalFeature` [Feature](https://docs.oracle.com/en/graalvm/enterprise/21/sdk/org/graalvm/nativeimage/hosted/Feature.html) class:
-
-```java
-public final class LibGraalFeature implements Feature {
-    static class Options {
-        @Option(help = "The value of the java.home system property reported by the Java " +
-                        "installation that includes the Graal classes in its runtime image " +
-                        "from which libgraal will be built. If not provided, the java.home " +
-                        "of the Java installation running native-image will be used.") //
-        public static final HostedOptionKey<Path> LibGraalJavaHome = new HostedOptionKey<>(Path.of(System.getProperty("java.home")));
-    }
-    /**
-     * Loader used for loading classes from the guest GraalVM.
-     */
-    LibGraalClassLoader loader;
-    /**
-     * Handle to {@link BuildTime} in the guest.
-     */
-    Class<?> buildTimeClass;
-
-    public void afterRegistration(AfterRegistrationAccess access) {
-        loader = new LibGraalClassLoader(Options.LibGraalJavaHome.getValue().resolve(Path.of("lib", "modules")));
-        buildTimeClass = loader.loadClassOrFail("jdk.graal.compiler.hotspot.libgraal.BuildTime");
-    }
-
-    public void duringSetup(DuringSetupAccess access) {
-        optionCollector = new OptionCollector(LibGraalEntryPoints.vmOptionDescriptors);
-        accessImpl.registerObjectReachableCallback(OptionKey.class, optionCollector::doCallback);
-        accessImpl.registerObjectReachableCallback(loader.loadClassOrFail(OptionKey.class.getName()), optionCollector::doCallback);
-    }
-    /**
-     * Collects all options that are reachable at run time. Reachable options are the
-     * {@link OptionKey} instances reached by the static analysis. The VM options are instances of
-     * {@link OptionKey} loaded by the {@link com.oracle.svm.hosted.NativeImageClassLoader} and
-     * compiler options are instances of {@link OptionKey} loaded by the
-     * {@link LibGraalClassLoader}.
-     */
-    private class OptionCollector implements ObjectReachableCallback<Object> {
-        private final Set<Object> options = Collections.newSetFromMap(new ConcurrentHashMap<>());
-        /**
-         * Libgraal VM options.
-         */
-        private final EconomicMap<String, OptionDescriptor> vmOptionDescriptors;
-
-        /**
-         * Libgraal compiler options info.
-         */
-        private final Object compilerOptionsInfo;
-
-        private boolean sealed;
-
-        OptionCollector(EconomicMap<String, OptionDescriptor> vmOptionDescriptors) {
-            this.vmOptionDescriptors = vmOptionDescriptors;
-                MethodHandle mh = mhl.findStatic(buildTimeClass, "initLibgraalOptions", mt);
-                compilerOptionsInfo = mh.invoke();
-        }
-        public void doCallback(DuringAnalysisAccess access, Object option, ObjectScanner.ScanReason reason) {
-                options.add(option);
-        }
-
-    }
-}
-```
-
-The `LibGraalClassLoader` is the class loader which loads the Graal compiler class of the Graal version which is about to be compiled into a native image (i.e. "libgraal" or `libjvmcicompiler.so` in our case). It is created after the registration of the `LibGraalFeature` class. During setup of the `LibGraalFeature` class, callbacks for reachable objects of type [`OptionKey`](https://docs.oracle.com/en/graalvm/enterprise/21/sdk/org/graalvm/options/OptionKey.html) (or derived types) are registered (N.B. - all Graal options are derived from `OptionKey`). Notice that Graal compiler options will be loaded by the `LibGraalClassLoader` whereas SubstrateVM options will be loaded by the `NativeImageClassLoader` (according to the API-doc, but in reality the SubstrateVM options get loaded by the `jdk.internal.loader.ClassLoaders$AppClassLoader` - this might be because the `NativeImageClassLoader` delegates to it?).
-
-After the reachability analysis has finished, `LibGraalFeature::afterAnalysis()` calls `OptionCollector::afterAnalysis()` which puts all SubstrateVM options into `vmOptionDescriptors` and calls `BuildTime::finalizeLibgraalOptions()` with all the Graal compiler options:
-
-```java
-void afterAnalysis(AfterAnalysisAccess access) {
-    sealed = true;
-    List<Object> compilerOptions = new ArrayList<>(options.size());
-    for (Object option : options) {
-        if (option instanceof OptionKey<?> optionKey) {
-            OptionDescriptor descriptor = optionKey.getDescriptor();
-            if (descriptor.isServiceLoaded()) {
-                vmOptionDescriptors.put(optionKey.getName(), descriptor);
-            }
-        } else {
-            compilerOptions.add(option);
-        }
-    }
-
-        MethodHandle mh = mhl.findStatic(buildTimeClass, "finalizeLibgraalOptions", mt);
-        Map<String, String> modules = loader.getModules();
-        Iterable<Object> values = (Iterable<Object>) mh.invoke(compilerOptions, compilerOptionsInfo, modules);
-}
-```
-
 ## Graal Compiler option handling
 
 The Graal compiler has a sophisticated way of declaring and managing options. The corresponding classes are located in the `jdk.graal.compiler.options` package which is also used by SubstrateVM.
@@ -227,17 +136,17 @@ public class GraalCompilerOptions_OptionDescriptors implements OptionDescriptors
 The build system (in [compiler/mx.compiler/mx_compiler.py](https://github.com/oracle/graal/blob/4c10155e7b932e5cf636501dd90eba20630c284a/compiler/mx.compiler/mx_compiler.py#L1296-L1312)):
 
 ```python
-        elif arcname.endswith('_OptionDescriptors.class'):
-            ...
-                # Need to create service files for the providers of the
-                # jdk.internal.vm.ci.options.Options service created by
-                # jdk.internal.vm.ci.options.processor.OptionProcessor.
-                provider = arcname[:-len('.class'):].replace('/', '.')
-                service = 'jdk.graal.compiler.options.OptionDescriptors'
+elif arcname.endswith('_OptionDescriptors.class'):
+    ...
+        # Need to create service files for the providers of the
+        # jdk.internal.vm.ci.options.Options service created by
+        # jdk.internal.vm.ci.options.processor.OptionProcessor.
+        provider = arcname[:-len('.class'):].replace('/', '.')
+        service = 'jdk.graal.compiler.options.OptionDescriptors'
                 add_serviceprovider(service, provider, version)
 ```
 
-Will take care, to register all the `OptionDescriptors` in `META-INF/services/jdk.graal.compiler.options.OptionDescriptors`:
+will take care, to register all the `OptionDescriptors` in `META-INF/services/jdk.graal.compiler.options.OptionDescriptors`:
 
 ```java
 jdk.graal.compiler.core.GraalCompilerOptions_OptionDescriptors
@@ -249,6 +158,184 @@ and the `module-info.class` file:
 ```java
     provides jdk.graal.compiler.options.OptionDescriptors with jdk.graal.compiler.core.GraalCompilerOptions_OptionDescriptors, ...
 ```
+
+At runtime, when using the pure Java version of the Graal Compiler (i.e. "jargraal") is used, the options will be loaded with the `ServiceLoader` in [`OptionsParser::getOptionsLoader()`](https://github.com/oracle/graal/blob/9421c159c65b240a5094c1aaabd16cfc9b8897f1/compiler/src/jdk.graal.compiler/src/jdk/graal/compiler/options/OptionsParser.java#L74C1-L95C1):
+```java
+    public static Iterable<OptionDescriptors> getOptionsLoader() {
+        ...
+        } else {
+            /*
+             * The Graal module (i.e., jdk.graal.compiler) is loaded by the platform class loader.
+             * Modules that depend on and extend Graal are loaded by the app class loader so use it
+             * (instead of the platform class loader) to load the OptionDescriptors.
+             */
+            ClassLoader loader = ClassLoader.getSystemClassLoader();
+            return ServiceLoader.load(OptionDescriptors.class, loader);
+        }
+    }
+```
+
+We will describe the behavior of `OptionsParser::getOptionsLoader()` for the native version of the Graal Compiler (i.e. "libgraal") and during the native image build time in the [next section](#libgraal-options-internals).
+
+
+`OptionsParser::getOptionsLoader()` will be invoked from several call sites, e.g. if we run with `-XX:+JVMCIPrintProperties` from [`HotSpotGraalOptionValues::printProperties()`]():
+
+```java
+/**
+ * The {@link #defaultOptions()} method returns the options values initialized in a HotSpot VM. The
+ * values are set via system properties with the {@value #GRAAL_OPTION_PROPERTY_PREFIX} prefix.
+ */
+public class HotSpotGraalOptionValues {
+    ...
+    static void printProperties(OptionValues compilerOptions, PrintStream out) {
+        boolean all = HotSpotGraalCompilerFactory.Options.PrintPropertiesAll.getValue(compilerOptions);
+        compilerOptions.printHelp(OptionsParser.getOptionsLoader(), out, GRAAL_OPTION_PROPERTY_PREFIX, all);
+        if (all) {
+            printLibgraalProperties(out, LIBGRAAL_VM_OPTION_PROPERTY_PREFIX);
+        }
+    }
+```
+
+or when parsing the provided command line options in [`HotSpotGraalOptionValues::parseOptions()`]():
+
+```java
+    /**
+     * Gets and parses options based on {@linkplain GraalServices#getSavedProperties() saved system
+     * properties}. The values for these options are initialized by parsing system properties whose
+     * names start with {@value #GRAAL_OPTION_PROPERTY_PREFIX}.
+     */
+    @SuppressWarnings("try")
+    public static EconomicMap<OptionKey<?>, Object> parseOptions() {
+        ...
+        Iterable<OptionDescriptors> descriptors = OptionsParser.getOptionsLoader();
+```
+
+or lazily, whenever the name of an `OptionKey` is accessed:
+
+```java
+/**
+ * A key for an option. The value for an option is obtained from an {@link OptionValues} object.
+ */
+public class OptionKey<T> {
+    ...
+    public final String getName() {
+        if (descriptor == null) {
+            // Trigger initialization of OptionsLoader to ensure all option values have
+            // a descriptor which is required for them to have meaningful names.
+            Lazy.init();
+        }
+        return descriptor == null ? super.toString() : descriptor.getName();
+    }
+    /**
+     * Mechanism for lazily loading all available options which has the side effect of assigning
+     * names to the options.
+     */
+    static class Lazy {
+        static {
+            for (OptionDescriptors opts : OptionsParser.getOptionsLoader()) {
+                for (OptionDescriptor desc : opts) {
+                    desc.getName();
+                }
+            }
+        }
+        static void init() {
+            /* Running the static class initializer does all the initialization. */
+        }
+    }
+```
+
+
+## libgraal options internals
+
+The available libgraal options are collected at build time (i.e. when running the `native-image` tool) and triggered by the `LibGraalFeature` [Feature](https://docs.oracle.com/en/graalvm/enterprise/21/sdk/org/graalvm/nativeimage/hosted/Feature.html) class:
+
+```java
+public final class LibGraalFeature implements Feature {
+    static class Options {
+        @Option(help = "The value of the java.home system property reported by the Java " +
+                        "installation that includes the Graal classes in its runtime image " +
+                        "from which libgraal will be built. If not provided, the java.home " +
+                        "of the Java installation running native-image will be used.") //
+        public static final HostedOptionKey<Path> LibGraalJavaHome = new HostedOptionKey<>(Path.of(System.getProperty("java.home")));
+    }
+    /**
+     * Loader used for loading classes from the guest GraalVM.
+     */
+    LibGraalClassLoader loader;
+    /**
+     * Handle to {@link BuildTime} in the guest.
+     */
+    Class<?> buildTimeClass;
+
+    public void afterRegistration(AfterRegistrationAccess access) {
+        loader = new LibGraalClassLoader(Options.LibGraalJavaHome.getValue().resolve(Path.of("lib", "modules")));
+        buildTimeClass = loader.loadClassOrFail("jdk.graal.compiler.hotspot.libgraal.BuildTime");
+    }
+
+    public void duringSetup(DuringSetupAccess access) {
+        optionCollector = new OptionCollector(LibGraalEntryPoints.vmOptionDescriptors);
+        accessImpl.registerObjectReachableCallback(OptionKey.class, optionCollector::doCallback);
+        accessImpl.registerObjectReachableCallback(loader.loadClassOrFail(OptionKey.class.getName()), optionCollector::doCallback);
+    }
+    /**
+     * Collects all options that are reachable at run time. Reachable options are the
+     * {@link OptionKey} instances reached by the static analysis. The VM options are instances of
+     * {@link OptionKey} loaded by the {@link com.oracle.svm.hosted.NativeImageClassLoader} and
+     * compiler options are instances of {@link OptionKey} loaded by the
+     * {@link LibGraalClassLoader}.
+     */
+    private class OptionCollector implements ObjectReachableCallback<Object> {
+        private final Set<Object> options = Collections.newSetFromMap(new ConcurrentHashMap<>());
+        /**
+         * Libgraal VM options.
+         */
+        private final EconomicMap<String, OptionDescriptor> vmOptionDescriptors;
+
+        /**
+         * Libgraal compiler options info.
+         */
+        private final Object compilerOptionsInfo;
+
+        private boolean sealed;
+
+        OptionCollector(EconomicMap<String, OptionDescriptor> vmOptionDescriptors) {
+            this.vmOptionDescriptors = vmOptionDescriptors;
+                MethodHandle mh = mhl.findStatic(buildTimeClass, "initLibgraalOptions", mt);
+                compilerOptionsInfo = mh.invoke();
+        }
+        public void doCallback(DuringAnalysisAccess access, Object option, ObjectScanner.ScanReason reason) {
+                options.add(option);
+        }
+
+    }
+}
+```
+
+The `LibGraalClassLoader` is the class loader which loads the Graal compiler class of the Graal version which is about to be compiled into a native image (i.e. "libgraal" or `libjvmcicompiler.so` in our case). It is created after the registration of the `LibGraalFeature` class. During setup of the `LibGraalFeature` class, callbacks for reachable objects of type [`OptionKey`](https://docs.oracle.com/en/graalvm/enterprise/21/sdk/org/graalvm/options/OptionKey.html) (or derived types) are registered (N.B. - all Graal options are derived from `OptionKey`). Notice that Graal compiler options will be loaded by the `LibGraalClassLoader` whereas SubstrateVM options will be loaded by the `NativeImageClassLoader` (according to the API-doc, but in reality the SubstrateVM options get loaded by the `jdk.internal.loader.ClassLoaders$AppClassLoader` - this might be because the `NativeImageClassLoader` delegates to it?).
+
+After the reachability analysis has finished, `LibGraalFeature::afterAnalysis()` calls `OptionCollector::afterAnalysis()` which puts all SubstrateVM options into `vmOptionDescriptors` and calls `BuildTime::finalizeLibgraalOptions()` with all the Graal compiler options:
+
+```java
+void afterAnalysis(AfterAnalysisAccess access) {
+    sealed = true;
+    List<Object> compilerOptions = new ArrayList<>(options.size());
+    for (Object option : options) {
+        if (option instanceof OptionKey<?> optionKey) {
+            OptionDescriptor descriptor = optionKey.getDescriptor();
+            if (descriptor.isServiceLoaded()) {
+                vmOptionDescriptors.put(optionKey.getName(), descriptor);
+            }
+        } else {
+            compilerOptions.add(option);
+        }
+    }
+
+        MethodHandle mh = mhl.findStatic(buildTimeClass, "finalizeLibgraalOptions", mt);
+        Map<String, String> modules = loader.getModules();
+        Iterable<Object> values = (Iterable<Object>) mh.invoke(compilerOptions, compilerOptionsInfo, modules);
+}
+```
+
 
 
 ```java
@@ -284,18 +371,6 @@ and the `module-info.class` file:
     }
 ```
 
-
-
-
-```java
-@OptionGroup(prefix = "compiler.", registerAsService = false)
-public class TruffleCompilerOptions {
-    ...
-    @Option(help = "Maximum depth for recursive inlining (default: 2, usage: [0, inf)).", type = OptionType.Expert) //
-    public static final OptionKey<Integer> InliningRecursionDepth = new OptionKey<>(2);
-    ...
-}
-```
 
 ## GraalVM SDK / Polyglot / Truffle option handling
 
@@ -394,3 +469,19 @@ final class OptimizedRuntimeOptionsOptionDescriptors implements TruffleOptionDes
 ```
 
 
+
+<!---
+ GR-44222 Deprecated several experimental engine options and moved them to use the `compiler` prefix instead of the `engine` prefix. You can search for these options with this regexp: `git grep -P '\bengine\.(EncodedGraphCache|ExcludeAssertions|FirstTierInliningPolicy|FirstTierUseEconomy|InlineAcrossTruffleBoundary|InlineOnly|Inlining|InliningExpansionBudget|InliningInliningBudget|InliningPolicy|InliningRecursionDepth|InliningUseSize|InstrumentBoundaries|InstrumentBoundariesPerInlineSite|InstrumentBranches|InstrumentBranchesPerInlineSite|InstrumentFilter|InstrumentationTableSize|IterativePartialEscape|MaximumGraalGraphSize|MethodExpansionStatistics|NodeExpansionStatistics|NodeSourcePositions|ParsePEGraphsWithAssumptions|TraceInlining|TraceInliningDetails|TraceMethodExpansion|TraceNodeExpansion|TracePerformanceWarnings|TraceStackTraceLimit|TreatPerformanceWarningsAsErrors)\b'`.
+
+ https://github.com/oracle/graal/blob/9421c159c65b240a5094c1aaabd16cfc9b8897f1/compiler/src/jdk.graal.compiler/src/jdk/graal/compiler/truffle/TruffleCompilerOptions.java
+-->
+
+```java
+@OptionGroup(prefix = "compiler.", registerAsService = false)
+public class TruffleCompilerOptions {
+    ...
+    @Option(help = "Maximum depth for recursive inlining (default: 2, usage: [0, inf)).", type = OptionType.Expert) //
+    public static final OptionKey<Integer> InliningRecursionDepth = new OptionKey<>(2);
+    ...
+}
+```
