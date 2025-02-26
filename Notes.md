@@ -332,7 +332,7 @@ $ MX_ALT_OUTPUT_ROOT=/tmp/libgraal-master \
      --disable-installables=true \
      build --targets libjvmcicompiler.so.image
 ```
-The `--dynamicimports`, `--components`, `--native-images` and `--disable-installables` are an alternative for using `--env libgraal` as described above. The latter just takes the corresponding options from `graal/vm/mx.vm/libgraal`. I still don't know where I can find the target `libjvmcicompiler.so.image` because neither `mx suites` nor `mx graalvm-show` displays it? But witout `--targets libjvmcicompiler.so.image` the build takes longer and produces conisderable more output in `MX_ALT_OUTPUT_ROOT`.
+The `--dynamicimports`, `--components`, `--native-images` and `--disable-installables` are an alternative for using `--env libgraal` as described above. The latter just takes the corresponding options from `graal/vm/mx.vm/libgraal`. I still don't know where I can find the target `libjvmcicompiler.so.image` because neither `mx suites` nor `mx graalvm-show` displays it? But without `--targets libjvmcicompiler.so.image` the build takes longer and produces conisderable more output in `MX_ALT_OUTPUT_ROOT`.
 
 ##### Building libgraal with Mandrel and OpenJDK
 
@@ -395,6 +395,116 @@ By default `mx` places the build artifacts into the `mxbuild/` subdirectory, but
 
 ### GraalVM Native Image
 
+#### Building GraalVM Native Image
+
+As of December 2024, it is possible to build the latest version of the Graal Native Image tool with the latest, unmodified version of OpenJDK (at the time of writing a pre-release of JDK 24). Because SubstrateVM/Native is still tightly coupled to the JDK and its JVMCI interface, the most promising approach is to look for the latest `jdk-<major>+<build>` tags in the Graal repository (e.g. `jdk-25+9`) and build OpenJDK on that very tag. Usually, the latest upstream OpenJDK build is imported every two weeks by the Graal team.
+
+After setting `JAVA_HOME` and putting `mx` in the path, we can then do the following from the top-level Graal directory:
+
+```
+$ MX_ALT_OUTPUT_ROOT=/tmp/native-image-master \
+  mx --primary-suite=substratevm graalvm-show
+```
+This will print quite some information:
+```
+GraalVM distribution: GRAALVM_5A90E9CFDC_JAVA25
+Version: 25.0.0-dev
+Config name: None
+Components:
+ ...
+ - Native Image ('ni', /svm, experimental)
+ ...
+Launchers:
+ - native-image (bash, rebuildable)
+ ...
+Libraries:
+ - libjvmcicompiler.so (skipped, rebuildable)
+ - libnative-image-agent.so (skipped, rebuildable)
+ ...
+No standalone
+```
+
+To build a minial Native Image distribution, we only need the `Native Image` component along with its dependencies:
+```
+$ MX_ALT_OUTPUT_ROOT=/tmp/native-image-master \
+  mx --primary-suite=substratevm \
+  --components=ni graalvm-show
+```
+The output now contains much fewer components, so we can list them all:
+```
+GraalVM distribution: GRAALVM_50BA5489A0_JAVA25
+Version: 25.0.0-dev
+Config name: None
+Components:
+ - Graal SDK Compiler ('sdkc', /graalvm, experimental)
+ - Graal SDK Native Image ('sdkni', /graalvm, experimental)
+ - GraalVM compiler ('cmp', /graal, experimental)
+ - Native Image ('ni', /svm, experimental)
+ - Native Image licence files ('nil', /svm, experimental)
+ - SubstrateVM ('svm', /svm, experimental)
+ - SubstrateVM Static Libraries ('svmsl', /False, experimental)
+ - Truffle Compiler ('tflc', /truffle, experimental)
+ - Truffle Runtime SVM ('svmt', /truffle, experimental)
+Launchers:
+ - native-image (bash, rebuildable)
+Libraries:
+ - libnative-image-agent.so (skipped, rebuildable)
+ - libnative-image-diagnostics-agent.so (skipped, rebuildable)
+No standalone
+```
+
+Notice how the name of the "GraalVM distribution" in the first line of the output has changed from `GRAALVM_5A90E9CFDC_JAVA25` before to `GRAALVM_50BA5489A0_JAVA25`. The strange number in the middle of the distribution name is actually a [SHA-1 hash of the various components which get included in the build](https://github.com/oracle/graal/blob/b49de582df9c69bd45e60755f074b38eaf1002da/sdk/mx.sdk/mx_sdk_vm_impl.py#L1031-L1033). We will see this name again in the directory name of the resulting Graal JDK. Actually, every configuration change, will trigger the creation of a new output directory under `$MX_ALT_OUTPUT_ROOT/sdk/linux-amd64/` which contains a full Graal JDK distribution with the corresponding configuration.
+
+Also, for some unknown reasons, this will still skip the creation of the native images agents:
+```
+Libraries:
+ - libnative-image-agent.so (skipped, rebuildable)
+ - libnative-image-diagnostics-agent.so (skipped, rebuildable)
+
+```
+
+In order to include them into our build, we additionally need to add `--native-images=lib:native-image-agent,lib:native-image-diagnostics-agent` to our build command:
+```
+$ MX_ALT_OUTPUT_ROOT=/tmp/native-image-master \
+  mx --primary-suite=substratevm \
+  --native-images=lib:native-image-agent,lib:native-image-diagnostics-agent \
+  --components=ni graalvm-show
+GraalVM distribution: GRAALVM_CCE6114D71_JAVA25
+...
+Libraries:
+ - libnative-image-agent.so (native, rebuildable)
+ - libnative-image-diagnostics-agent.so (native, rebuildable)
+```
+Notice how the distribution name changed again to `GRAALVM_CCE6114D71_JAVA25` now, because we've additionally included the agent libraries.
+
+`graalvm-show` can also be used with optional command line parameters to get even more information on what will be built:
+```
+usage: mx graalvm-show [-h] [--stage1] [--print-env] [-v]
+
+Print the GraalVM config
+
+optional arguments:
+  -h, --help     show this help message and exit
+  --stage1       show the components for stage1
+  --print-env    print the contents of an env file that reproduces the current GraalVM config
+  -v, --verbose  print additional information about installables and standalones
+```
+Using just `graalvm` as command will trigger an error which revelas other interesting commands:
+```
+mx: command 'graalvm' is ambiguous
+    graalvm-components graalvm-dist-name graalvm-version graalvm-home graalvm-type graalvm-enter graalvm-show graalvm-vm-name
+```
+
+Now that we know a bit more about the Native Image build process, we can build a Native Image JDK with:
+```
+$ MX_ALT_OUTPUT_ROOT=/tmp/native-image-master \
+  mx --primary-suite=substratevm \
+  --native-images=lib:native-image-agent,lib:native-image-diagnostics-agent \
+  --components=ni build
+```
+The resulting Native Image enabled JDK can be found under `sdk/latest_graalvm_home` which is a symlink to `$MX_ALT_OUTPUT_ROOT/sdk/linux-amd64/GRAALVM_50BA5489A0_JAVA25/graalvm-50ba5489a0-java25-25.0.0-dev`. Notice the previously mentioned hash code in the directory names. This JDK has the `native-image` tool in its `bin/` director and the `libnative-image-agent.so` at `lib/libnative-image-agent.so`.
+
+#### References
 - [GraalVM Native Image Quick Reference v1](https://medium.com/graalvm/graalvm-native-image-quick-reference-4ceb84560fd8) and [GraalVM Native Image Quick Reference v2](https://medium.com/graalvm/native-image-quick-reference-v2-332cf453d1bc) by Olga Gupalo
 - [Memory Management at Native Image Run Time](https://docs.oracle.com/en/graalvm/enterprise/20/docs/reference-manual/native-image/MemoryManagement)
 - [Package `org.graalvm.nativeimage.c`](https://www.graalvm.org/sdk/javadoc/org/graalvm/nativeimage/c/package-summary.html): This package and its sub-packages provide a fast and lightweight interface between Java code and C code.
