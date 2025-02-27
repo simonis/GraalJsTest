@@ -58,7 +58,7 @@ $ cd graaljs/
 $ git checkout release/graal-vm/23.1
 $ grep mx_version common.json
   "mx_version": "6.46.1",
-# dont't do 'mx sforceimports' as adviced in https://github.com/oracle/graaljs/blob/master/docs/Building.md because it will mess up your `../../graal` repo to a *strange* revision (defined in the 'imports.suites.regex' section of 'mx.graal-js/suite.py')!
+# don't do 'mx sforceimports' as advised in https://github.com/oracle/graaljs/blob/master/docs/Building.md because it will mess up your `../../graal` repo to a *strange* revision (defined in the 'imports.suites.regex' section of 'mx.graal-js/suite.py')!
 $ cd ..
 $ git clone https://github.com/graalvm/mx.git
 $ export PATH=$PWD/mx:$PATH
@@ -489,7 +489,7 @@ optional arguments:
   --print-env    print the contents of an env file that reproduces the current GraalVM config
   -v, --verbose  print additional information about installables and standalones
 ```
-Using just `graalvm` as command will trigger an error which revelas other interesting commands:
+Using just `graalvm` as command will trigger an error which reveals other interesting commands:
 ```
 mx: command 'graalvm' is ambiguous
     graalvm-components graalvm-dist-name graalvm-version graalvm-home graalvm-type graalvm-enter graalvm-show graalvm-vm-name
