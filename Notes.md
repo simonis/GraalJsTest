@@ -516,3 +516,4 @@ The resulting Native Image enabled JDK can be found under `sdk/latest_graalvm_ho
 - [Understanding Class Initialization in GraalVM Native Image Generation](https://medium.com/graalvm/understanding-class-initialization-in-graalvm-native-image-generation-d765b7e4d6ed) by Christian Wimmer
 - [Updates on Class Initialization in GraalVM Native Image Generation](https://medium.com/graalvm/updates-on-class-initialization-in-graalvm-native-image-generation-c61faca461f7) by Christian Wimmer
 - [Native Image Substitutions](https://build-native-java-apps.cc/developer-guide/substitution/)
+- [Native Image Features](https://build-native-java-apps.cc/developer-guide/feature/)
