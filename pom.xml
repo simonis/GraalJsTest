@@ -50,6 +50,12 @@
           <artifactId>profiler-tool</artifactId>
           <version>${graalvm.version}</version>
         </dependency>
+        <dependency>
+          <groupId>org.graalvm.sdk</groupId>
+          <artifactId>nativeimage</artifactId>
+          <version>${graalvm.version}</version>
+          <scope>provided</scope>
+        </dependency>
       </dependencies>
     </profile>
 
