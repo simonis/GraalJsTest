@@ -517,3 +517,4 @@ The resulting Native Image enabled JDK can be found under `sdk/latest_graalvm_ho
 - [Updates on Class Initialization in GraalVM Native Image Generation](https://medium.com/graalvm/updates-on-class-initialization-in-graalvm-native-image-generation-c61faca461f7) by Christian Wimmer
 - [Native Image Substitutions](https://build-native-java-apps.cc/developer-guide/substitution/)
 - [Native Image Features](https://build-native-java-apps.cc/developer-guide/feature/)
+- [Quarkus - Including Native Libraries in the Native Image](https://github.com/quarkusio/quarkus/blob/main/adr/0006-native-compilation-with-binary-libraries.adoc)

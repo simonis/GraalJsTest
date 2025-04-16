@@ -58,6 +58,7 @@ public class RsaTest {
 
         String message = args.length == 0 ? "RSA encryption/decryption test" : args[0];
         if (message.toLowerCase().contains("accp") && accp != null) {
+            Security.removeProvider("AmazonCorrettoCryptoProvider");
             Security.insertProviderAt(accp, 1);
         }
         BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
@@ -102,6 +103,16 @@ class AccpFeature implements Feature {
     public String getDescription() {
         return "ACCP Support";
     }
+
+    @Override
+    public boolean isInConfiguration(IsInConfigurationAccess a) {
+        if (a.findClassByName("com.amazon.corretto.crypto.provider.AmazonCorrettoCryptoProvider") != null) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
     /*
     @Override
     public void duringSetup(DuringSetupAccess a) {
