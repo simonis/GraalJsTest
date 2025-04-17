@@ -95,7 +95,7 @@ final class Target_com_amazon_corretto_crypto_provider_Loader {
     @RecomputeFieldValue(kind = Kind.Reset)
     static Target_com_amazon_corretto_crypto_provider_Janitor RESOURCE_JANITOR;
 }
- */
+*/
 
 class AccpFeature implements Feature {
 
@@ -113,21 +113,35 @@ class AccpFeature implements Feature {
         }
     }
 
-    /*
     @Override
     public void duringSetup(DuringSetupAccess a) {
         System.out.println("--> AccpFeature::duringSetup()");
-        //RuntimeClassInitializationSupport rci = ImageSingletons.lookup(RuntimeClassInitializationSupport.class);
-        // rerunInitialization() is just an alias for initializeAtRunTime() in Graal 23.1 but still used in internal Featuers.
-        // TODO: replace by initializeAtRunTime()
-        //rci.rerunInitialization("com.amazon.corretto.crypto.provider.AmazonCorrettoCryptoProvider", "for ACCP");
+        try {
+            RuntimeClassInitializationSupport rci = ImageSingletons.lookup(RuntimeClassInitializationSupport.class);
+            System.out.println("--> " + rci.getClass().getName());
+            // If running with `--strict-image-heap` (or the equivalent `-H:+StrictImageHeap`) then `rci` will be of type
+            // `AllowAllHostedUsagesClassInitializationSupport` and `rerunInitialization()` will be just an alias for
+            // `initializeAtRunTime()`. Starting with Graal 24.0 `--strict-image-heap` is the default (and only supported configuration).
+            // See https://github.com/oracle/graal/pull/4684 and https://github.com/oracle/graal/pull/7474 for more information.
+            //
+            // However, without `--strict-image-heap`, `rci` will be a `ProvenSafeClassInitializationSupport` and `rerunInitialization()`
+            // will indeed trigger the re-initialization of the corresponding classes at run time.
+            // Notice that accesing `RuntimeClassInitializationSupport` requires
+            // `--add-exports org.graalvm.nativeimage/org.graalvm.nativeimage.impl=ALL-UNNAMED` on the native image command line.
+            rci.rerunInitialization("com.amazon.corretto.crypto.provider.Loader", "for ACCP");
+        } catch (Throwable e) {
+            e.printStackTrace(System.out);
+        }
+
+        /*
         try {
             RuntimeClassInitialization.initializeAtRunTime(a.findClassByName("com.amazon.corretto.crypto.provider.Loader"));
         } catch (ClassNotFoundException e) {
             throw new RuntimeException(e);
         }
+         */
     }
-     */
+
     @Override
     public void beforeAnalysis(BeforeAnalysisAccess a) {
         System.out.println("--> AccpFeature::beforeAnalysis()");
@@ -161,6 +175,43 @@ com.amazon.corretto.crypto.provider.SelfTestSuite$SelfTest,\
 com.amazon.corretto.crypto.provider.SelfTestResult,\
 com.amazon.corretto.crypto.provider.SelfTestStatus,\
 com.amazon.corretto.crypto.provider.Utils$NativeContextReleaseStrategy' \
+--trace-class-initialization=com.amazon.corretto.crypto.provider.Loader \
+--trace-class-initialization=com.amazon.corretto.crypto.provider.AmazonCorrettoCryptoProvider \
+-H:+TraceSecurityServices -H:DebugInfoSourceSearchPath=/priv/simonisv/Git/amazon-corretto-crypto-provider/src \
+-cp target/graal-js-test-1.0-SNAPSHOT.jar io.simonis.nativeimage.test.RsaTest /tmp/RsaTest
+
+$ GraalVM21/build/jdk-21/bin/native-image -g -O0 -H:+SourceLevelDebug -H:Log=registerResource --no-fallback \
+--add-exports org.graalvm.nativeimage/org.graalvm.nativeimage.impl=ALL-UNNAMED --features=io.simonis.nativeimage.test.AccpFeature --initialize-at-build-time='\
+com.amazon.corretto.crypto.provider.AmazonCorrettoCryptoProvider$ACCPService,\
+com.amazon.corretto.crypto.provider.AmazonCorrettoCryptoProvider,\
+com.amazon.corretto.crypto.provider.ExtraCheck,\
+com.amazon.corretto.crypto.provider.SelfTestSuite,\
+com.amazon.corretto.crypto.provider.SelfTestSuite$SelfTest,\
+com.amazon.corretto.crypto.provider.SelfTestResult,\
+com.amazon.corretto.crypto.provider.SelfTestStatus,\
+com.amazon.corretto.crypto.provider.Utils$NativeContextReleaseStrategy,\
+com.amazon.corretto.crypto.provider.Janitor$Stripe,\
+com.amazon.corretto.crypto.provider.EvpHmac,\
+com.amazon.corretto.crypto.provider.EvpHmac$SHA384,\
+com.amazon.corretto.crypto.provider.EvpHmac$SHA384Base,\
+com.amazon.corretto.crypto.provider.EvpHmac$SHA512,\
+com.amazon.corretto.crypto.provider.EvpKeyType$1,\
+com.amazon.corretto.crypto.provider.EvpHmac$SHA256Base,\
+com.amazon.corretto.crypto.provider.Utils,\
+com.amazon.corretto.crypto.provider.Janitor$HeldReference,\
+com.amazon.corretto.crypto.provider.EvpHmac$SHA512Base,\
+com.amazon.corretto.crypto.provider.AmazonCorrettoCryptoProvider$1,\
+com.amazon.corretto.crypto.provider.EvpKeyType,\
+com.amazon.corretto.crypto.provider.EvpHmac$MD5Base,\
+com.amazon.corretto.crypto.provider.EvpHmac$MD5,\
+com.amazon.corretto.crypto.provider.EvpHmac$SHA1Base,\
+com.amazon.corretto.crypto.provider.SHA1Spi,\
+com.amazon.corretto.crypto.provider.EvpHmac$SHA1,\
+com.amazon.corretto.crypto.provider.DebugFlag,\
+com.amazon.corretto.crypto.provider.LibCryptoRng$SPI,\
+com.amazon.corretto.crypto.provider.SHA256Spi,\
+com.amazon.corretto.crypto.provider.NativeResource$Cell,\
+com.amazon.corretto.crypto.provider.EvpHmac$SHA256' \
 --trace-class-initialization=com.amazon.corretto.crypto.provider.Loader \
 --trace-class-initialization=com.amazon.corretto.crypto.provider.AmazonCorrettoCryptoProvider \
 -H:+TraceSecurityServices -H:DebugInfoSourceSearchPath=/priv/simonisv/Git/amazon-corretto-crypto-provider/src \
