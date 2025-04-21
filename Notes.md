@@ -519,3 +519,4 @@ The resulting Native Image enabled JDK can be found under `sdk/latest_graalvm_ho
 - [Native Image Features](https://build-native-java-apps.cc/developer-guide/feature/)
 - [Quarkus - Including Native Libraries in the Native Image](https://github.com/quarkusio/quarkus/blob/main/adr/0006-native-compilation-with-binary-libraries.adoc)
 - [[GR-39406] Add new class initialization strategy that allows all classes to be used at image build time.](https://github.com/oracle/graal/pull/4684)
+- [Initialize once, start fast: application initialization at build time](https://www.researchgate.net/publication/336450138_Initialize_once_start_fast_application_initialization_at_build_time)

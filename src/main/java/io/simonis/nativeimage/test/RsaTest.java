@@ -12,8 +12,13 @@ import org.graalvm.nativeimage.hosted.RuntimeResourceAccess;
 import org.graalvm.nativeimage.impl.RuntimeClassInitializationSupport;
 
 import javax.crypto.Cipher;
+import javax.net.SocketFactory;
+import javax.net.ssl.SSLSocket;
+import javax.net.ssl.SSLSocketFactory;
 import java.io.BufferedReader;
+import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
@@ -83,6 +88,43 @@ public class RsaTest {
         System.out.println("Decrypted message: " + decryptedMessage);
         System.out.print("<RETURN>");
         in.readLine();
+
+        String HOST = "raw.githubusercontent.com";
+        String PATH = "/simonis/GraalJsTest/refs/heads/main/src/main/java/io/simonis/nativeimage/test/RsaTest.java";
+        String host = System.getProperty("host", HOST);
+        Integer port = Integer.getInteger("port", 443);
+        String path = System.getProperty("path", PATH);
+        SocketFactory sslSocketFactory = SSLSocketFactory.getDefault();
+        SSLSocket sslSocket = (SSLSocket)sslSocketFactory.createSocket(host, port);
+        InputStream sin = sslSocket.getInputStream();
+        OutputStream out = sslSocket.getOutputStream();
+        String request = String.format("GET %s HTTP/1.1\r\nHost: %s\r\n\r\n", path, host);
+        System.out.println(request);
+        out.write(request.getBytes());
+        BufferedReader br = new BufferedReader(new InputStreamReader(sin));
+        int length = 0;
+        String line;
+        do {
+            line = br.readLine();
+            if (line != null && line.startsWith("Content-Length: ")) {
+                length = Integer.parseUnsignedInt(line, "Content-Length: ".length(), line.length(), 10);
+                System.out.println("Content-Length: " + length);
+            }
+        } while (!"".equals(line));
+        char[] buf = new char[length];
+        StringBuilder sb = new StringBuilder(length);
+        for (int read; (read = br.read(buf, 0, length)) > 0; length -= read) {
+            sb.append(buf, 0, read);
+        }
+        if (HOST.equals(host) && PATH.equals(path)) {
+            if (sb.toString().contains(PATH)) {
+                System.out.println("Successfully read " + PATH);
+                System.out.println("https://" + HOST);
+            } else {
+                System.out.println("This class is out of sync with the GitHub repo.");
+                System.out.println("Do you need to commit?");
+            }
+        }
     }
 }
 /*
