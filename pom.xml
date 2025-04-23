@@ -56,6 +56,12 @@
           <version>${graalvm.version}</version>
           <scope>provided</scope>
         </dependency>
+        <dependency>
+          <groupId>org.graalvm.nativeimage</groupId>
+          <artifactId>native-image-base</artifactId>
+          <version>${graalvm.version}</version>
+          <scope>provided</scope>
+        </dependency>
       </dependencies>
     </profile>
 

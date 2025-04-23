@@ -4,8 +4,10 @@ import com.oracle.svm.core.annotate.Alias;
 import com.oracle.svm.core.annotate.RecomputeFieldValue;
 import com.oracle.svm.core.annotate.RecomputeFieldValue.Kind;
 import com.oracle.svm.core.annotate.TargetClass;
+import com.oracle.svm.util.ReflectionUtil;
 import org.graalvm.nativeimage.ImageSingletons;
 import org.graalvm.nativeimage.hosted.Feature;
+import org.graalvm.nativeimage.hosted.FieldValueTransformer;
 import org.graalvm.nativeimage.hosted.RuntimeClassInitialization;
 import org.graalvm.nativeimage.hosted.RuntimeReflection;
 import org.graalvm.nativeimage.hosted.RuntimeResourceAccess;
@@ -19,6 +21,8 @@ import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.lang.reflect.Method;
+import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
@@ -28,6 +32,7 @@ import java.security.PublicKey;
 import java.security.Security;
 import java.util.Base64;
 import java.util.ServiceLoader;
+import java.util.function.Predicate;
 
 public class RsaTest {
     public static void main(String[] args) throws Exception {
@@ -119,7 +124,7 @@ public class RsaTest {
         if (HOST.equals(host) && PATH.equals(path)) {
             if (sb.toString().contains(PATH)) {
                 System.out.println("Successfully read " + PATH);
-                System.out.println("https://" + HOST);
+                System.out.println("From https://" + HOST);
             } else {
                 System.out.println("This class is out of sync with the GitHub repo.");
                 System.out.println("Do you need to commit?");
@@ -127,17 +132,80 @@ public class RsaTest {
         }
     }
 }
-/*
-@TargetClass(className = "com.amazon.corretto.crypto.provider.Janitor")
-final class Target_com_amazon_corretto_crypto_provider_Janitor {
+
+/** A predicate to tell whether this platform includes the argument class.
+ *  Copied from substratevm/src/com.oracle.svm.core/src/com/oracle/svm/core/jdk/PlatformHasClass.java.
+ * */
+final class PlatformHasClass implements Predicate<String> {
+    @Override
+    public boolean test(String className) {
+        return ReflectionUtil.lookupClass(true, className) != null;
+    }
 }
-@TargetClass(className = "com.amazon.corretto.crypto.provider.Loader")
-final class Target_com_amazon_corretto_crypto_provider_Loader {
+
+@TargetClass(className = "com.amazon.corretto.crypto.provider.EvpKey", onlyWith = PlatformHasClass.class)
+final class Target_com_amazon_corretto_crypto_provider_EvpKey {
+    @Alias
+    @RecomputeFieldValue(kind = Kind.Custom, declClass = InternalGetEncoded.class)
+    protected volatile byte[] encoded;
+    static class InternalGetEncoded implements FieldValueTransformer {
+        @Override
+        public Object transform(Object receiver, Object original) {
+            try {
+                Class evpKey = ReflectionUtil.lookupClass(true, "com.amazon.corretto.crypto.provider.EvpKey");
+                if (evpKey != null) {
+                    Method internalGetEncoded = ReflectionUtil.lookupMethod(true, evpKey, "internalGetEncoded");
+                    if (internalGetEncoded != null) {
+                        Object ret = ReflectionUtil.invokeMethod(internalGetEncoded, receiver);
+                        return ret;
+                    }
+                }
+            } catch (Throwable e) {
+                e.printStackTrace(System.out);
+            }
+            return null;
+        }
+    }
+}
+
+@TargetClass(className = "com.amazon.corretto.crypto.provider.EvpRsaKey", onlyWith = PlatformHasClass.class)
+final class Target_com_amazon_corretto_crypto_provider_EvpRsaKey {
+    @Alias
+    @RecomputeFieldValue(kind = Kind.Custom, declClass = GetModulus.class)
+    protected volatile BigInteger modulus;
+    static class GetModulus implements FieldValueTransformer {
+        @Override
+        public Object transform(Object receiver, Object original) {
+            try {
+                Class evpRsaKey = ReflectionUtil.lookupClass(true, "com.amazon.corretto.crypto.provider.EvpRsaKey");
+                if (evpRsaKey != null) {
+                    Method getModulus = ReflectionUtil.lookupMethod(true, evpRsaKey, "getModulus");
+                    if (getModulus != null) {
+                        Object ret = ReflectionUtil.invokeMethod(getModulus, receiver);
+                        return ret;
+                    }
+                }
+            } catch (Throwable e) {
+                e.printStackTrace(System.out);
+            }
+            return null;
+        }
+    }
+}
+
+@TargetClass(className = "java.util.concurrent.locks.AbstractOwnableSynchronizer")
+final class Target_java_util_concurrent_locks_AbstractOwnableSynchronizer {
     @Alias
     @RecomputeFieldValue(kind = Kind.Reset)
-    static Target_com_amazon_corretto_crypto_provider_Janitor RESOURCE_JANITOR;
+    private transient Thread exclusiveOwnerThread;
 }
-*/
+
+@TargetClass(className = "java.util.concurrent.locks.AbstractQueuedSynchronizer", innerClass = "Node")
+final class Target_java_util_concurrent_locks_AbstractQueuedSynchronizer_Node {
+    @Alias
+    @RecomputeFieldValue(kind = Kind.Reset)
+    Thread waiter;
+}
 
 class AccpFeature implements Feature {
 
@@ -204,10 +272,10 @@ class AccpFeature implements Feature {
 }
 
 /*
- * Build with a GraalJDK with ACCP as default crypto provider:
+ * Build with a GraalJDK with ACCP as default crypto provider (RSA example):
  *
 
-$ GraalVM21/build/jdk-21/bin/native-image -g -O0 -H:+SourceLevelDebug -H:Log=registerResource --no-fallback \
+$ GraalVM21/build/jdk-21/bin/native-image -g -O0 -H:+SourceLevelDebug H:+IncludeDebugHelperMethods -H:Log=registerResource --no-fallback \
 --strict-image-heap --features=io.simonis.nativeimage.test.AccpFeature --initialize-at-build-time='\
 com.amazon.corretto.crypto.provider.AmazonCorrettoCryptoProvider$ACCPService,\
 com.amazon.corretto.crypto.provider.AmazonCorrettoCryptoProvider,\
@@ -222,8 +290,55 @@ com.amazon.corretto.crypto.provider.Utils$NativeContextReleaseStrategy' \
 -H:+TraceSecurityServices -H:DebugInfoSourceSearchPath=/priv/simonisv/Git/amazon-corretto-crypto-provider/src \
 -cp target/graal-js-test-1.0-SNAPSHOT.jar io.simonis.nativeimage.test.RsaTest /tmp/RsaTest
 
-$ GraalVM21/build/jdk-21/bin/native-image -g -O0 -H:+SourceLevelDebug -H:Log=registerResource --no-fallback \
---add-exports org.graalvm.nativeimage/org.graalvm.nativeimage.impl=ALL-UNNAMED --features=io.simonis.nativeimage.test.AccpFeature --initialize-at-build-time='\
+ *
+ * Build with a GraalJDK with ACCP as default crypto provider (RSA & SSL example):
+ * Requires Target_java_util_concurrent_locks_AbstractOwnableSynchronizer and
+ * Target_java_util_concurrent_locks_AbstractQueuedSynchronizer_Node to reset all references to the
+ * "Native reference cleanup thread" thread created by ACCP.
+ *
+ * This will still crash in `com.amazon.corretto.crypto.provider.EvpKey.encodePublicKey(Native Method)` because
+ * `EvpKey` keeps an opaque reference to native image which is not available any more at run time.
+ *
+ * However we can fix it by disabeling ACCP in `Target_sun_security_ssl_TrustStoreManager` for the time we call
+ * `TrustStoreManager::getTrustedCerts()` and `TrustStoreManager::getTrustedKeyStore()`
+ *
+
+$ graal/graalvm-community-jdk21u/sdk/linux-amd64/GRAALVM_72849DDB0E_JAVA21/graalvm-72849ddb0e-java21-23.1.7-dev/bin/native-image \
+-g -O0 -H:+PrintImageObjectTree -H:+PrintUniverse -H:+DiagnosticsMode -H:+LogVerbose -H:+PrintFeatures \
+-H:+SourceLevelDebug -H:Log=registerResource -H:LogFile=/tmp/native-image.log --no-fallback \
+--strict-image-heap \
+--add-exports org.graalvm.nativeimage.base/com.oracle.svm.util=ALL-UNNAMED \
+--add-exports org.graalvm.nativeimage/org.graalvm.nativeimage.impl=ALL-UNNAMED \
+--features=io.simonis.nativeimage.test.AccpFeature --initialize-at-build-time='\
+com.amazon.corretto.crypto.provider.AmazonCorrettoCryptoProvider$ACCPService,\
+com.amazon.corretto.crypto.provider.AmazonCorrettoCryptoProvider,\
+com.amazon.corretto.crypto.provider.ExtraCheck,\
+com.amazon.corretto.crypto.provider.SelfTestSuite,\
+com.amazon.corretto.crypto.provider.SelfTestSuite$SelfTest,\
+com.amazon.corretto.crypto.provider.SelfTestResult,\
+com.amazon.corretto.crypto.provider.SelfTestStatus,\
+com.amazon.corretto.crypto.provider.Utils$NativeContextReleaseStrategy,\
+com.amazon.corretto.crypto.provider.EvpRsaPublicKey,\
+com.amazon.corretto.crypto.provider.EvpKeyType,\
+com.amazon.corretto.crypto.provider.EvpKey$InternalKey,\
+com.amazon.corretto.crypto.provider.NativeResource$Cell,\
+com.amazon.corretto.crypto.provider.Janitor$HeldReference,\
+com.amazon.corretto.crypto.provider.Janitor$Stripe,\
+com.amazon.corretto.crypto.provider.EvpEcPublicKey' \
+--trace-class-initialization=com.amazon.corretto.crypto.provider.Loader \
+--trace-class-initialization=com.amazon.corretto.crypto.provider.AmazonCorrettoCryptoProvider \
+--trace-object-instantiation=com.amazon.corretto.crypto.provider.EvpRsaPublicKey \
+-H:+TraceSecurityServices -H:DebugInfoSourceSearchPath=/priv/simonisv/Git/amazon-corretto-crypto-provider/src \
+-cp target/graal-js-test-1.0-SNAPSHOT.jar:/priv/simonisv/Git/amazon-corretto-crypto-provider/build/lib/AmazonCorrettoCryptoProvider.jar \
+-Djava.security.properties=GraalVM21/build/jdk-21/conf/security/java.security io.simonis.nativeimage.test.RsaTest /tmp/RsaTest
+
+ *
+ * Build with a GraalJDK with ACCP as default crypto provider, without `--strict-image-heap` (RSA example)
+ *
+
+$ GraalVM21/build/jdk-21/bin/native-image -g -O0 -H:+SourceLevelDebug H:+IncludeDebugHelperMethods -H:Log=registerResource --no-fallback \
+--add-exports org.graalvm.nativeimage/org.graalvm.nativeimage.impl=ALL-UNNAMED \
+--features=io.simonis.nativeimage.test.AccpFeature --initialize-at-build-time='\
 com.amazon.corretto.crypto.provider.AmazonCorrettoCryptoProvider$ACCPService,\
 com.amazon.corretto.crypto.provider.AmazonCorrettoCryptoProvider,\
 com.amazon.corretto.crypto.provider.ExtraCheck,\
@@ -258,5 +373,56 @@ com.amazon.corretto.crypto.provider.EvpHmac$SHA256' \
 --trace-class-initialization=com.amazon.corretto.crypto.provider.AmazonCorrettoCryptoProvider \
 -H:+TraceSecurityServices -H:DebugInfoSourceSearchPath=/priv/simonisv/Git/amazon-corretto-crypto-provider/src \
 -cp target/graal-js-test-1.0-SNAPSHOT.jar io.simonis.nativeimage.test.RsaTest /tmp/RsaTest
+
+ *
+ * Build with a GraalJDK with ACCP as default crypto provider, without `--strict-image-heap` (RSA & SSL example)
+ *
+ * This crashes in `com.amazon.corretto.crypto.provider.EvpSignature.verify(Native Method)`
+ *
+
+$ graalvm-community-jdk21u/sdk/linux-amd64/GRAALVM_72849DDB0E_JAVA21/graalvm-72849ddb0e-java21-23.1.7-dev/bin/native-image \
+-g -O0 -H:+PrintImageObjectTree -H:+PrintUniverse -H:+DiagnosticsMode -H:+LogVerbose -H:+PrintFeatures \
+-H:+SourceLevelDebug -H:Log=registerResource -H:LogFile=/tmp/native-image.log --no-fallback \
+--add-exports org.graalvm.nativeimage.base/com.oracle.svm.util=ALL-UNNAMED \
+--add-exports org.graalvm.nativeimage/org.graalvm.nativeimage.impl=ALL-UNNAMED \
+--features=io.simonis.nativeimage.test.AccpFeature --initialize-at-build-time='\
+com.amazon.corretto.crypto.provider.AmazonCorrettoCryptoProvider$ACCPService,\
+com.amazon.corretto.crypto.provider.AmazonCorrettoCryptoProvider,\
+com.amazon.corretto.crypto.provider.ExtraCheck,\
+com.amazon.corretto.crypto.provider.SelfTestSuite,\
+com.amazon.corretto.crypto.provider.SelfTestSuite$SelfTest,\
+com.amazon.corretto.crypto.provider.SelfTestResult,\
+com.amazon.corretto.crypto.provider.SelfTestStatus,\
+com.amazon.corretto.crypto.provider.Utils$NativeContextReleaseStrategy,\
+com.amazon.corretto.crypto.provider.EvpHmac$SHA384,\
+com.amazon.corretto.crypto.provider.EvpHmac$SHA512,\
+com.amazon.corretto.crypto.provider.EvpHmac$MD5Base,\
+com.amazon.corretto.crypto.provider.SHA256Spi,\
+com.amazon.corretto.crypto.provider.EvpHmac$SHA256,\
+com.amazon.corretto.crypto.provider.SHA1Spi,\
+com.amazon.corretto.crypto.provider.LibCryptoRng$SPI,\
+com.amazon.corretto.crypto.provider.AesCbcSpi,\
+com.amazon.corretto.crypto.provider.Janitor$HeldReference,\
+com.amazon.corretto.crypto.provider.AmazonCorrettoCryptoProvider$1,\
+com.amazon.corretto.crypto.provider.EvpHmac$MD5,\
+com.amazon.corretto.crypto.provider.EcGen,\
+com.amazon.corretto.crypto.provider.DebugFlag,\
+com.amazon.corretto.crypto.provider.EvpHmac,\
+com.amazon.corretto.crypto.provider.EvpKeyType,\
+com.amazon.corretto.crypto.provider.EvpHmac$SHA1,\
+com.amazon.corretto.crypto.provider.EvpHmac$SHA256Base,\
+com.amazon.corretto.crypto.provider.EvpHmac$SHA1Base,\
+com.amazon.corretto.crypto.provider.EvpHmac$SHA384Base,\
+com.amazon.corretto.crypto.provider.EvpHmac$SHA512Base,\
+com.amazon.corretto.crypto.provider.Janitor$Stripe,\
+com.amazon.corretto.crypto.provider.Utils' \
+--trace-class-initialization=com.amazon.corretto.crypto.provider.Loader \
+--trace-class-initialization=com.amazon.corretto.crypto.provider.AmazonCorrettoCryptoProvider \
+--trace-class-initialization=com.amazon.corretto.crypto.provider.Utils \
+-H:TraceObjectInstantiation=com.amazon.corretto.crypto.provider.Utils \
+--trace-object-instantiation=com.amazon.corretto.crypto.provider.SelfTestResult \
+-H:+TraceSecurityServices -H:DebugInfoSourceSearchPath=/priv/simonisv/Git/amazon-corretto-crypto-provider/src \
+-cp target/graal-js-test-1.0-SNAPSHOT.jar:/priv/simonisv/Git/amazon-corretto-crypto-provider/build/lib/AmazonCorrettoCryptoProvider.jar \
+-Djava.security.properties=GraalVM21/src/GraalVM21/build/jdk-21/conf/security/java.security io.simonis.nativeimage.test.RsaTest /tmp/RsaTest
 
  */
