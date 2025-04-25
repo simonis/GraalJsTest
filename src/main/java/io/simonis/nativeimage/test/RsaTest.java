@@ -3,12 +3,15 @@ package io.simonis.nativeimage.test;
 import com.oracle.svm.core.annotate.Alias;
 import com.oracle.svm.core.annotate.RecomputeFieldValue;
 import com.oracle.svm.core.annotate.RecomputeFieldValue.Kind;
+import com.oracle.svm.core.annotate.Substitute;
 import com.oracle.svm.core.annotate.TargetClass;
+import com.oracle.svm.core.annotate.TargetElement;
 import com.oracle.svm.util.ReflectionUtil;
 import org.graalvm.nativeimage.ImageSingletons;
 import org.graalvm.nativeimage.hosted.Feature;
 import org.graalvm.nativeimage.hosted.FieldValueTransformer;
 import org.graalvm.nativeimage.hosted.RuntimeClassInitialization;
+import org.graalvm.nativeimage.hosted.RuntimeJNIAccess;
 import org.graalvm.nativeimage.hosted.RuntimeReflection;
 import org.graalvm.nativeimage.hosted.RuntimeResourceAccess;
 import org.graalvm.nativeimage.impl.RuntimeClassInitializationSupport;
@@ -21,6 +24,7 @@ import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
@@ -31,7 +35,9 @@ import java.security.Provider;
 import java.security.PublicKey;
 import java.security.Security;
 import java.util.Base64;
+import java.util.Map;
 import java.util.ServiceLoader;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Predicate;
 
 public class RsaTest {
@@ -146,7 +152,7 @@ final class PlatformHasClass implements Predicate<String> {
 @TargetClass(className = "com.amazon.corretto.crypto.provider.EvpKey", onlyWith = PlatformHasClass.class)
 final class Target_com_amazon_corretto_crypto_provider_EvpKey {
     @Alias
-    @RecomputeFieldValue(kind = Kind.Custom, declClass = InternalGetEncoded.class)
+    @RecomputeFieldValue(kind = Kind.Custom, declClass = InternalGetEncoded.class, isFinal = true)
     protected volatile byte[] encoded;
     static class InternalGetEncoded implements FieldValueTransformer {
         @Override
@@ -191,6 +197,44 @@ final class Target_com_amazon_corretto_crypto_provider_EvpRsaKey {
             return null;
         }
     }
+}
+
+@TargetClass(className = "com.amazon.corretto.crypto.provider.EvpHmac", innerClass = "SHA256", onlyWith = PlatformHasClass.class)
+final class Target_com_amazon_corretto_crypto_provider_EvpHmac_SHA256 {
+    @Alias
+    @RecomputeFieldValue(kind = Kind.Custom, declClass = Utils_getEvpMdFromName.class)
+    private static long evpMd;
+    @Alias
+    @RecomputeFieldValue(kind = Kind.Custom, declClass = Utils_getDigestLength.class)
+    private static int digestLength;
+    static class Utils_getEvpMdFromName implements FieldValueTransformer {
+        @Override
+        public Object transform(Object receiver, Object original) {
+            return Target_com_amazon_corretto_crypto_provider_Utils.getEvpMdFromName("sha1");
+        }
+    }
+    static class Utils_getDigestLength implements FieldValueTransformer {
+        @Override
+        public Object transform(Object receiver, Object original) {
+            return Target_com_amazon_corretto_crypto_provider_Utils.getDigestLength(
+                    Target_com_amazon_corretto_crypto_provider_Utils.getEvpMdFromName("sha1"));
+        }
+    }
+}
+
+@TargetClass(className = "com.amazon.corretto.crypto.provider.Utils", onlyWith = PlatformHasClass.class)
+final class Target_com_amazon_corretto_crypto_provider_Utils {
+    @Alias
+    @RecomputeFieldValue(kind = Kind.NewInstance, declClass = ConcurrentHashMap.class, isFinal = false, disableCaching = true)
+    private static Map<String, Long> digestPtrByName = new ConcurrentHashMap<>();
+    @Alias
+    @RecomputeFieldValue(kind = Kind.NewInstance, declClass = ConcurrentHashMap.class, isFinal = false, disableCaching = true)
+    private static Map<Long, Integer> digestLengthByPtr = new ConcurrentHashMap<>();
+    @Alias
+    static native long getEvpMdFromName(String digestName);
+    @Alias
+    static native int getDigestLength(long evpMd);
+
 }
 
 @TargetClass(className = "java.util.concurrent.locks.AbstractOwnableSynchronizer")
@@ -239,6 +283,8 @@ class AccpFeature implements Feature {
             // Notice that accesing `RuntimeClassInitializationSupport` requires
             // `--add-exports org.graalvm.nativeimage/org.graalvm.nativeimage.impl=ALL-UNNAMED` on the native image command line.
             rci.rerunInitialization("com.amazon.corretto.crypto.provider.Loader", "for ACCP");
+            rci.rerunInitialization("com.amazon.corretto.crypto.provider.EvpHmac$SHA256", "for ACCP");
+            rci.rerunInitialization("com.amazon.corretto.crypto.provider.Utils", "for ACCP");
         } catch (Throwable e) {
             e.printStackTrace(System.out);
         }
@@ -258,6 +304,11 @@ class AccpFeature implements Feature {
         Class spf = a.findClassByName("com.amazon.corretto.crypto.provider.ServiceProviderFactory");
         //a.registerAsUsed(spf);
         RuntimeReflection.register(spf);
+        Class rex = a.findClassByName("com.amazon.corretto.crypto.provider.RuntimeCryptoException");
+        RuntimeJNIAccess.register(rex);
+        for (Constructor c : rex.getDeclaredConstructors()) {
+            RuntimeJNIAccess.register(c);
+        }
         try {
             RuntimeReflection.register(spf.getDeclaredMethod("provider"));
             RuntimeReflection.registerAllDeclaredMethods(spf);
@@ -275,7 +326,7 @@ class AccpFeature implements Feature {
  * Build with a GraalJDK with ACCP as default crypto provider (RSA example):
  *
 
-$ GraalVM21/build/jdk-21/bin/native-image -g -O0 -H:+SourceLevelDebug H:+IncludeDebugHelperMethods -H:Log=registerResource --no-fallback \
+$ GraalVM21/build/jdk-21/bin/native-image -g -O0 -H:+SourceLevelDebug -H:+IncludeDebugHelperMethods -H:-DeleteLocalSymbols -H:Log=registerResource --no-fallback \
 --strict-image-heap --features=io.simonis.nativeimage.test.AccpFeature --initialize-at-build-time='\
 com.amazon.corretto.crypto.provider.AmazonCorrettoCryptoProvider$ACCPService,\
 com.amazon.corretto.crypto.provider.AmazonCorrettoCryptoProvider,\
