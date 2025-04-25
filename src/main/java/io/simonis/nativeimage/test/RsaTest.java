@@ -56,6 +56,13 @@ public class RsaTest {
          * at java.base@21.0.6/java.util.ServiceLoader$3.hasNext(ServiceLoader.java:1393)
          * at io.simonis.nativeimage.test.RsaTest.main(RsaTest.java:32)
          * at java.base@21.0.6/java.lang.invoke.LambdaForm$DMH/sa346b79c.invokeStaticInit(LambdaForm$DMH)
+         *
+         * This is because `Security.getProviders()` as used below, only returns the providers which were added to the
+         * native image, whereas `ServiceLoader.load(Provider.class)` also returns providers which were removed from the
+         * native image (see the list of removed providers at the end of the `/security_services_*.txt` file produced by `-H:+TraceSecurityServices`).
+         * Also, `java.security.Provider` is in the list of `SKIPPED_SERVICES` in `com.oracle.svm.hosted.ServiceLoaderFeature` and so
+         * security providers don't get added to the native image automatically.
+         *
 
         ServiceLoader<Provider> pl = ServiceLoader.load(Provider.class);
         for (Provider p : pl) {
