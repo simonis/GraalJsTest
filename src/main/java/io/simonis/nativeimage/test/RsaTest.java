@@ -21,6 +21,7 @@ import javax.net.SocketFactory;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
@@ -28,6 +29,8 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.PrivateKey;
@@ -155,7 +158,7 @@ final class PlatformHasClass implements Predicate<String> {
         return ReflectionUtil.lookupClass(true, className) != null;
     }
 }
-
+/*
 @TargetClass(className = "com.amazon.corretto.crypto.provider.EvpKey", onlyWith = PlatformHasClass.class)
 final class Target_com_amazon_corretto_crypto_provider_EvpKey {
     @Alias
@@ -257,6 +260,7 @@ final class Target_java_util_concurrent_locks_AbstractQueuedSynchronizer_Node {
     @RecomputeFieldValue(kind = Kind.Reset)
     Thread waiter;
 }
+*/
 
 class AccpFeature implements Feature {
 
@@ -324,8 +328,16 @@ class AccpFeature implements Feature {
             e.printStackTrace(System.out);
         }
         String accpLibName = System.mapLibraryName("amazonCorrettoCryptoProvider");
-        RuntimeResourceAccess.addResource(spf.getModule(), "com/amazon/corretto/crypto/provider/" + accpLibName);
-        RuntimeResourceAccess.addResource(spf.getModule(), "com/amazon/corretto/crypto/provider/version.properties");
+        //RuntimeResourceAccess.addResource(spf.getModule(), "com/amazon/corretto/crypto/provider/" + accpLibName);
+        //RuntimeResourceAccess.addResource(spf.getModule(), "com/amazon/corretto/crypto/provider/version.properties");
+        String javaHome = System.getProperty("java.home");
+        try {
+            RuntimeResourceAccess.addResource(spf.getModule(), "com/amazon/corretto/crypto/provider/" + accpLibName, Files.readAllBytes(Path.of(javaHome, "lib", accpLibName)));
+            RuntimeResourceAccess.addResource(spf.getModule(), "com/amazon/corretto/crypto/provider/version.properties", Files.readAllBytes(Path.of(javaHome, "conf", "com/amazon/corretto/crypto/provider/version.properties")));
+        } catch (IOException ioe) {
+            System.out.println("--> AccpFeature::beforeAnalysis() : can't inject ACCP library and/or configuration file");
+            ioe.printStackTrace(System.out);
+        }
     }
 }
 
@@ -482,5 +494,22 @@ com.amazon.corretto.crypto.provider.Utils' \
 -H:+TraceSecurityServices -H:DebugInfoSourceSearchPath=/priv/simonisv/Git/amazon-corretto-crypto-provider/src \
 -cp target/graal-js-test-1.0-SNAPSHOT.jar:/priv/simonisv/Git/amazon-corretto-crypto-provider/build/lib/AmazonCorrettoCryptoProvider.jar \
 -Djava.security.properties=GraalVM21/src/GraalVM21/build/jdk-21/conf/security/java.security io.simonis.nativeimage.test.RsaTest /tmp/RsaTest
+
+ *
+ * Build with a GraalJDK with ACCP as default crypto provider and the `AccpFeature`, Substitutions and the changes to
+ * `TrustStoreManagerFeature` from: https://github.com/simonis/graal/tree/accp-support
+ *
+
+$ Git/Graal/graal/sdk/latest_graalvm/graalvm-72849ddb0e-java21-23.1.7-dev/bin/native-image \
+-g -O0 -H:+SourceLevelDebug -H:+IncludeDebugHelperMethods -H:-DeleteLocalSymbols -H:+PrintImageObjectTree -H:+PrintUniverse \
+-H:+DiagnosticsMode -H:+LogVerbose -H:+PrintFeatures -H:Log=registerResource -H:LogFile=/tmp/native-image.log \
+--no-fallback --strict-image-heap -H:+TraceSecurityServices \
+-H:DebugInfoSourceSearchPath=/priv/simonisv/Git/amazon-corretto-crypto-provider/src \
+-cp target/graal-js-test-1.0-SNAPSHOT.jar:/priv/simonisv/Git/amazon-corretto-crypto-provider/build/lib/AmazonCorrettoCryptoProvider.jar \
+-Djava.security.properties=./src/main/resources/accp/accp.security \
+-Dcom.amazon.corretto.crypto.provider.debug=PRESERVE_NATIVE_LIBRARIES \
+-Dcom.amazon.corretto.crypto.provider.useExternalLibInNativeImage=false \
+-Dcom.amazon.corretto.crypto.provider.debug=VERBOSELOGS \
+-Djava.util.logging.config.file=./src/main/resources/accp/logging.properties io.simonis.nativeimage.test.RsaTest /tmp/RsaTest
 
  */
