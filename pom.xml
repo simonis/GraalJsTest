@@ -229,9 +229,8 @@
             <configuration>
 	      <outputDirectory>${project.build.directory}/js-deps</outputDirectory>
 	      <excludeTypes>pom</excludeTypes>
-	      <excludeGrouIds>org.ow2.asm,org.graalvm.compiler</excludeGrouIds>
-              <!-- Unfortunately <excludeGrouIds> doesn't work, so we have to explicitely list all artifact ids -->
-	      <excludeArtifactIds>compiler,nashorn-core,asm,asm-commons,asm-tree,asm-util,asm-analysis,profiler,profiler-tool,json</excludeArtifactIds>
+	      <excludeGroupIds>org.ow2.asm,org.graalvm.compiler,org.graalvm.tools,org.openjdk.nashorn,software.amazon.cryptools</excludeGroupIds>
+	      <excludeArtifactIds>json</excludeArtifactIds>
             </configuration>
           </execution>
           <execution>
@@ -242,7 +241,7 @@
             </goals>
             <configuration>
 	      <outputDirectory>${project.build.directory}/compiler-deps</outputDirectory>
-	      <includeGrouIds>org.graalvm.compiler</includeGrouIds>
+	      <includeGroupIds>org.graalvm.compiler</includeGroupIds>
 	      <includeArtifactIds>compiler</includeArtifactIds>
             </configuration>
           </execution>
@@ -254,7 +253,7 @@
             </goals>
             <configuration>
 	      <outputDirectory>${project.build.directory}/profiler-deps</outputDirectory>
-	      <includeGrouIds>org.graalvm.tools</includeGrouIds>
+	      <includeGroupIds>org.graalvm.tools,org.graalvm.shadowed</includeGroupIds>
 	      <includeArtifactIds>profiler,profiler-tool,json</includeArtifactIds>
             </configuration>
           </execution>
@@ -266,9 +265,7 @@
             </goals>
             <configuration>
 	      <outputDirectory>${project.build.directory}/nashorn-deps</outputDirectory>
-	      <includeGrouIds>org.openjdk.nashorn,org.ow2.asm</includeGrouIds>
-              <!-- Unfortunately <includeGrouIds> doesn't work, so we have to explicitely list all artifact ids -->
-	      <includeArtifactIds>nashorn-core,asm,asm-commons,asm-tree,asm-util,asm-analysis</includeArtifactIds>
+	      <includeGroupIds>org.openjdk.nashorn,org.ow2.asm</includeGroupIds>
             </configuration>
           </execution>
         </executions>
