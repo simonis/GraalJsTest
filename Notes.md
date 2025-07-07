@@ -401,7 +401,7 @@ As of December 2024, it is possible to build the latest version of the Graal Nat
 
 After setting `JAVA_HOME` and putting `mx` in the path, we can then do the following from the top-level Graal directory:
 
-```
+```bash
 $ MX_ALT_OUTPUT_ROOT=/tmp/native-image-master \
   mx --primary-suite=substratevm graalvm-show
 ```
@@ -425,7 +425,7 @@ No standalone
 ```
 
 To build a minial Native Image distribution, we only need the `Native Image` component along with its dependencies:
-```
+```bash
 $ MX_ALT_OUTPUT_ROOT=/tmp/native-image-master \
   mx --primary-suite=substratevm \
   --components=ni graalvm-show
@@ -464,7 +464,7 @@ Libraries:
 ```
 
 In order to include them into our build, we additionally need to add `--native-images=lib:native-image-agent,lib:native-image-diagnostics-agent` to our build command:
-```
+```bash
 $ MX_ALT_OUTPUT_ROOT=/tmp/native-image-master \
   mx --primary-suite=substratevm \
   --native-images=lib:native-image-agent,lib:native-image-diagnostics-agent \
@@ -496,13 +496,42 @@ mx: command 'graalvm' is ambiguous
 ```
 
 Now that we know a bit more about the Native Image build process, we can build a Native Image JDK with:
-```
+```bash
 $ MX_ALT_OUTPUT_ROOT=/tmp/native-image-master \
   mx --primary-suite=substratevm \
   --native-images=lib:native-image-agent,lib:native-image-diagnostics-agent \
   --components=ni build
 ```
 The resulting Native Image enabled JDK can be found under `sdk/latest_graalvm_home` which is a symlink to `$MX_ALT_OUTPUT_ROOT/sdk/linux-amd64/GRAALVM_50BA5489A0_JAVA25/graalvm-50ba5489a0-java25-25.0.0-dev`. Notice the previously mentioned hash code in the directory names. This JDK has the `native-image` tool in its `bin/` director and the `libnative-image-agent.so` at `lib/libnative-image-agent.so`.
+
+### GraalPython
+
+#### Building GraalPython
+
+As for [GraalJS](#building-graaljs) we first need to clone the [GraalPython](https://github.com/oracle/graalpython) repository in parallel to main [Graal](https://github.com/oracle/graal.git) and [`mx`](https://github.com/graalvm/mx.git) repositories. Graal and GraalPython should be synced to the same version (e.g. `release/graal-vm/25.0`) and `mx` should be checked out at the `mx_version` referenced in `graal/common.json` (e.g. `7.54.3`).
+
+In order to build the GraalPython jars/modules along with their dependencies we can do the following:
+```bash
+$ cd graalpython
+$ MX_ALT_OUTPUT_ROOT=/tmp/graalpy-25.0 \
+  MX_PYTHON=/share/software/Python-3.13.3_bin/bin/python3 \
+  mx build --build-logs oneline --targets GRAALPYTHON,GRAALPYTHON_RESOURCES
+```
+The resulting artifacts can be found under `$MX_ALT_OUTPUT_ROOT/graalpython/dists/`:
+
+<details>
+  <summary>GraalPython build artifacts</summary>
+
+```bash
+$ ls -1 $MX_ALT_OUTPUT_ROOT/graalpython/dists/*.jar
+/tmp/graalpy-25.0/graalpython/dists/graalpython.jar
+/tmp/graalpy-25.0/graalpython/dists/graalpython-launcher.jar
+/tmp/graalpy-25.0/graalpython/dists/graalpython-processor.jar
+/tmp/graalpy-25.0/graalpython/dists/graalpython-resources.jar
+```
+</details>
+
+`graalpython.jar` is the Python language implementation (built by the target `GRAALPYTHON`) and `graalpython-resources.jar` is the Python standard library (built by the target `GRAALPYTHON_RESOURCES`).
 
 #### References
 - [GraalVM Native Image Quick Reference v1](https://medium.com/graalvm/graalvm-native-image-quick-reference-4ceb84560fd8) and [GraalVM Native Image Quick Reference v2](https://medium.com/graalvm/native-image-quick-reference-v2-332cf453d1bc) by Olga Gupalo
