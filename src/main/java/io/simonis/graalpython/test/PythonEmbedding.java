@@ -15,7 +15,9 @@ public class PythonEmbedding {
     engine.getOptions().forEach(od -> System.out.println(od.getName() + " : \n\t" + od.getHelp() + "\n\t" + od.getKey().getDefaultValue()));
     System.out.println("==================== Python Options ====================");
     engine.getLanguages().get("python").getOptions().forEach(od -> System.out.println(od.getName() + " : \n\t" + od.getHelp() + "\n\t" + od.getKey().getDefaultValue()));
-    //engine.getLanguages().get("python").getSourceOptions().forEach(od -> System.out.println(od));
+    // Only supported since Graal 25.0
+    //System.out.println("==================== Python Source Options ====================");
+    //engine.getLanguages().get("python").getSourceOptions().forEach(od -> System.out.println(od.getName() + " : \n\t" + od.getHelp() + "\n\t" + od.getKey().getDefaultValue()));
     try (Context context = Context.newBuilder("python")
          .engine(engine)
          .option("python.PythonHome", "/tmp")
