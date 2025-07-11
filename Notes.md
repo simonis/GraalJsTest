@@ -600,11 +600,11 @@ $ mvn -DMAVEN_REPOSITORY=/tmp/graalpy-25.0-mvn \
   dependency:purge-local-repository -DactTransitively=false -DreResolve=false
 ```
 
-[!NOTE]
-If we want to use the GraalPy artifact from the local repository we've just created, we have to use `org.graalvm.python` instead of `org.graalvm.polyglot` as `groupId` for the `python-community` artifact. This is because `mx maven-deploy` only builds the [org.graalvm.python/python-community](https://mvnrepository.com/artifact/org.graalvm.python/python-community) POM and not [org.graalvm.polyglot/python-community](https://mvnrepository.com/artifact/org.graalvm.polyglot/python-community). The latter is generated in the `graal/vm` suite by [`create_polyglot_meta_pom_distribution_from_base_distribution()`](https://github.com/oracle/graal/blob/c5df0c319473ceb21e7d9e9efa6896af496c0006/vm/mx.vm/mx_vm.py#L292) from the former and merely redirects to it.
+>[!NOTE]
+>If we want to use the GraalPy artifact from the local repository we've just created, we have to use `org.graalvm.python` instead of `org.graalvm.polyglot` as `groupId` for the `python-community` artifact. This is because `mx maven-deploy` only builds the [org.graalvm.python/python-community](https://mvnrepository.com/artifact/org.graalvm.python/python-community) POM and not [org.graalvm.polyglot/python-community](https://mvnrepository.com/artifact/org.graalvm.polyglot/python-community). The latter is generated in the `graal/vm` suite by [`create_polyglot_meta_pom_distribution_from_base_distribution()`](https://github.com/oracle/graal/blob/c5df0c319473ceb21e7d9e9efa6896af496c0006/vm/mx.vm/mx_vm.py#L292) from the former and merely redirects to it.
 
-[!Note]
-It is also possible to download pre-built Maven bundles (e.g. [
+>[!Note]
+>It is also possible to download pre-built Maven bundles (e.g. [
 maven-resource-bundle-community-dev.tar.gz](https://github.com/graalvm/graalvm-ce-dev-builds/releases/download/25.0.0-dev-20250607_2256/maven-resource-bundle-community-dev.tar.gz)) for the latest GraalVM Community development builds from https://github.com/graalvm/graalvm-ce-dev-builds as well as Oracle GraalVM early access builds (including Maven bundles) from https://github.com/graalvm/oracle-graalvm-ea-builds.
 
 #### References
