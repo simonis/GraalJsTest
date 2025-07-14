@@ -20,7 +20,6 @@ public class PythonEmbedding {
     //engine.getLanguages().get("python").getSourceOptions().forEach(od -> System.out.println(od.getName() + " : \n\t" + od.getHelp() + "\n\t" + od.getKey().getDefaultValue()));
     try (Context context = Context.newBuilder("python")
          .engine(engine)
-         .option("python.PythonHome", "/tmp")
          .allowAllAccess(true)
          .build()) {
       System.out.println("Context: " + context);
@@ -29,8 +28,10 @@ public class PythonEmbedding {
       int x = function.execute(41).asInt();
       assert x == 42;
       while (true) {
+        System.out.print(">>> ");
         BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
         String line = in.readLine();
+        if (line == null) return;
         try {
           System.out.println(context.eval("python", line));
         } catch (Exception e) {
