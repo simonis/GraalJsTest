@@ -42,6 +42,7 @@
     - The JVM in the `community-jvm` version contains the two additional (apparently empty, upgradeable?) modules `jdk.compiler.graal` and `jdk.compiler.graal.management` (see `graaljs-community-23.1.2-linux-amd64/jvm/release`).
   - What's the difference between the tags `vm-ee-23.1.2`, `vm-ce-23.1.2`, `vm-23.1.2` and `graal-23.1.2` in the https://github.com/oracle/graaljs repository and which tag/branch corresponds to the GitHub release `graaljs-community-23.1.2-linux-amd64.tar.gz` and the Maven central version `23.1.2`. At least for now, all the tags seem to be identical?
   - The `-jvm` versions contain the native version of the GraalVM Compiler (i.e. `jvm/lib/libjvmcicompiler.so`) and enables it with `-XX:+EnableJVMCIProduct -XX:+UseJVMCINativeLibrary` (`EnableJVMCIProduct` means *Allow JVMCI to be used in product mode. This alters a subset of JVMCI flags to be non-experimental, defaults `UseJVMCICompiler` and `EnableJVMCI` to true and defaults `UseJVMCINativeLibrary` to true if a JVMCI native library is available*).
+- [Graal Languages - Demos and Guides](https://github.com/graalvm/graal-languages-demos)
 
 #### Building GraalJS
 
@@ -271,12 +272,14 @@ See Foivos Zakkak's [Getting started with GraalVM development](https://foivos.za
     TruffleHotSpotCompilation-6793 LTruffleIR/Tier1;                                                      Math_floor                                    ()LTruffleIR/Tier1;                                 | 325583us  2084B bytecodes  1024B codesize
     ```
   - Also see the latest version of [truffle/docs/Optimizing.md](https://github.com/oracle/graal/blob/master/truffle/docs/Optimizing.md) and [truffle/docs/Options.md](https://github.com/oracle/graal/blob/master/truffle/docs/Options.md) in the Graal GitHub repository.
+  - To run with the interpreter-only runtime set `-Dtruffle.UseFallbackRuntime=true -Dpolyglot.engine.WarnInterpreterOnly=false`. This also means that the native library `libtruffleattach.so` won't be required (see [[GR-54828] Use truffleattach to avoid the need for --add-exports=java.base/jdk.internal.misc=jdk.graal.compiler](https://github.com/oracle/graal/commit/61d00a300a3) and [[GR-57817] Prepare JNI and Unsafe usage for JDK 24](https://github.com/oracle/graal/pull/9892)).
 - Mandrel [discussion/PR](https://github.com/graalvm/mandrel-packaging/pull/369) about supporting Truffle in native-image with Mandrel.
 - [Truffle Enterprise](https://mvnrepository.com/artifact/org.graalvm.truffle/truffle-enterprise/23.1.2) is available for download from Maven Central (`org.graalvm.truffle/truffle-enterprise`) under the GFTC but the sources artifact `truffle-enterprise-23.1.2-sources.jar` only contains a `LICENSE` file with the GFTC.
 - [TruffleRuby](https://chrisseaton.com/truffleruby/) by Chris Seaton
 - [Graal Truffle tutorial in 13 parts](https://www.endoflineblog.com/graal-truffle-tutorial-part-0-what-is-truffle) by Adam Rubka
 - [Embedding Truffle Languages](https://nirvdrum.com/2022/05/09/truffle-language-embedding.html) by Kevin Menard
 - [Writing Truly Memory Safe JIT Compilers](https://medium.com/graalvm/writing-truly-memory-safe-jit-compilers-f79ad44558dd) by Mike Hearn
+- [Auxiliary Engine Caching](https://github.com/oracle/graal/blob/master/truffle/docs/AuxiliaryEngineCachingEnterprise.md): a GraalVM Enterprise feature that allows to store and load the pre-processed AST and compiled native code of an Engine to and from disk.
 
 ### GraalVM Compiler
 
@@ -507,106 +510,7 @@ The resulting Native Image enabled JDK can be found under `sdk/latest_graalvm_ho
 
 ### GraalPython
 
-#### Building GraalPython
-
-As for [GraalJS](#building-graaljs), we first need to clone the [GraalPython](https://github.com/oracle/graalpython) repository in parallel to main [Graal](https://github.com/oracle/graal.git) and [`mx`](https://github.com/graalvm/mx.git) repositories. Graal and GraalPython should be synced to the same version (e.g. `release/graal-vm/25.0`) and `mx` should be checked out at the `mx_version` referenced in `graal/common.json` (e.g. `7.54.3`).
-
-In order to build the GraalPython jars/modules along with their dependencies we can do the following:
-```bash
-$ cd graalpython
-$ MX_ALT_OUTPUT_ROOT=/tmp/graalpy-25.0 \
-  MX_PYTHON=/Python-3.13.3_bin/bin/python3 \
-  mx build --build-logs oneline --targets GRAALPYTHON,GRAALPYTHON_RESOURCES,GRAALPYTHON_EMBEDDING
-```
-The resulting artifacts can be found under `$MX_ALT_OUTPUT_ROOT/graalpython/dists/`:
-
-<details>
-  <summary>GraalPython build artifacts</summary>
-
-```bash
-$ ls -1 $MX_ALT_OUTPUT_ROOT/graalpython/dists/*.jar
-/tmp/graalpy-25.0/graalpython/dists/graalpython-embedding.jar
-/tmp/graalpy-25.0/graalpython/dists/graalpython.jar
-/tmp/graalpy-25.0/graalpython/dists/graalpython-launcher.jar
-/tmp/graalpy-25.0/graalpython/dists/graalpython-processor.jar
-/tmp/graalpy-25.0/graalpython/dists/graalpython-resources.jar
-```
-</details>
-
-`graalpython.jar` is the Python language implementation (built by the target `GRAALPYTHON`), `graalpython-resources.jar` is the Python standard library (built by the target `GRAALPYTHON_RESOURCES`) and `graalpython-embedding.jar` (built by the target `GRAALPYTHON_EMBEDDING`) contains various helper classes like [`GraalPyResources`](https://github.com/oracle/graalpython/blob/release/graal-vm/25.0/graalpython/org.graalvm.python.embedding/src/org/graalvm/python/embedding/GraalPyResources.java) and [`VirtualFileSystem`](https://github.com/oracle/graalpython/blob/release/graal-vm/25.0/graalpython/org.graalvm.python.embedding/src/org/graalvm/python/embedding/VirtualFileSystem.java) which are required for [embedding GraalPy into Java applications](https://github.com/oracle/graalpython/blob/master/docs/user/Embedding-Build-Tools.md).
-
-#### Building the GraalPython Maven artifacts
-
-Is is also possible to build all the GraalPython artifacts along with their dependencies into a local Maven repository. In order to do this, we first have to build the full GraalPython suite with all its dependencies:
-
-```bash
-$ GRADLE_JAVA_HOME=/corretto-21 \
-  MX_ALT_OUTPUT_ROOT=/tmp/graalpy-25.0 \
-  MX_PYTHON=/Python-3.13.3_bin/bin/python3 \
-  mx build --build-logs oneline
-```
-
-Among the full set of modules/jars in the `$MX_ALT_OUTPUT_ROOT/*/dists/` subdirectories, this will also create a standalone GraalPY distribution under `$MX_ALT_OUTPUT_ROOT/graalpython/linux-amd64/GRAALPY_JVM_STANDALONE/` with the three binary launchers `bin/{graalpy,python,python3}` and a full blown GraalJDK with GraalPy included under `$MX_ALT_OUTPUT_ROOT/sdk/linux-amd64/GRAALVM_AEF5EAA70A_JAVA25/graalvm-aef5eaa70a-java25-25.0.0-dev` (the strange hash in the path name is described in the section [Building GraalVM Native Image](#building-graalvm-native-image)).
-
-Once we have a full GraalPython build we can call
-```bash
-$ MX_ALT_OUTPUT_ROOT=/tmp/graalpy-25.0 \
-  MX_PYTHON=/Python-3.13.3_bin/bin/python3 \
-  mx maven-deploy --all-suites \
-  --licenses EPL-2.0,PSF-License,GPLv2-CPE,ICU,GPLv2,BSD-simplified,BSD-new,UPL,MIT \
-  graalvm-snapshot-repo file:///tmp/graalpy-25.0-mvn
-```
-in order to create the Maven artifacts into the local Maven repository under `/tmp/graalpy-25.0-mvn`. `graalvm-snapshot-repo` is the mandatory `repository-id` argument of `mx maven-deploy` (run `mx maven-deploy --help` for more information) which I think isn't used for local deployments and `file:///tmp/graalpy-25.0-mvn` is the URL of the Maven repository (in this case a local directory).
-
-Once we've deployed the GraalPy artifacts and their dependencies to a local repository, we can use it as follows in a POM file:
-```xml
-  <repositories>
-    <!--
-        Local repository with snapshot builds.
-    -->
-    <repository>
-      <id>graalvm-snapshot-repo</id>
-      <name>graalvm-snapshot-repo</name>
-      <url>file://${MAVEN_REPOSITORY}</url>
-      <snapshots>
-        <enabled>true</enabled>
-      </snapshots>
-    </repository>
-  </repositories>
-
-  <profiles>
-    <profile>
-      <id>graal-25-0-0</id>
-      <build>
-        <directory>${basedir}/target-25-0-0-python</directory>
-      </build>
-      <activation>
-        <property>
-          <name>MAVEN_REPOSITORY</name>
-        </property>
-      </activation>
-      <properties>
-        <graalvm.version>25.0.0-SNAPSHOT</graalvm.version>
-      </properties>
-      ...
-    </profile>
-  </profiles>
-```
-With these settings, the profile `graal-25-0-0` will be activated if we pass `-DMAVEN_REPOSITORY=/tmp/graalpy-25.0-mvn` on the `mvn` command line and it will look for the Graal/GraalPy artifacts with the version `25.0.0-SNAPSHOT` in the local Maven repository at `/tmp/graalpy-25.0-mvn` that we've just created.
-
-Once we run `mvn` with these parameters, the required artifacts will be copied from the local Maven repository into our local Maven cache (usuallyl located at `~/.m2`). We can remove all the cached dependencies of our current project/profile by using the [following command](https://www.baeldung.com/maven-clear-cache):
-
-```bash
-$ mvn -DMAVEN_REPOSITORY=/tmp/graalpy-25.0-mvn \
-  dependency:purge-local-repository -DactTransitively=false -DreResolve=false
-```
-
-> [!NOTE]
-> If we want to use the GraalPy artifact from the local repository we've just created, we have to use `org.graalvm.python` instead of `org.graalvm.polyglot` as `groupId` for the `python-community` artifact. This is because `mx maven-deploy` only builds the [org.graalvm.python/python-community](https://mvnrepository.com/artifact/org.graalvm.python/python-community) POM and not [org.graalvm.polyglot/python-community](https://mvnrepository.com/artifact/org.graalvm.polyglot/python-community). The latter is generated in the `graal/vm` suite by [`create_polyglot_meta_pom_distribution_from_base_distribution()`](https://github.com/oracle/graal/blob/c5df0c319473ceb21e7d9e9efa6896af496c0006/vm/mx.vm/mx_vm.py#L292) from the former and merely redirects to it.
-
-> [!NOTE]
-> It is also possible to download pre-built Maven bundles (e.g. [maven-resource-bundle-community-dev.tar.gz](https://github.com/graalvm/graalvm-ce-dev-builds/releases/download/25.0.0-dev-20250607_2256/maven-resource-bundle-community-dev.tar.gz)) for the latest GraalVM Community development builds from https://github.com/graalvm/graalvm-ce-dev-builds as well as Oracle GraalVM early access builds (including Maven bundles) from https://github.com/graalvm/oracle-graalvm-ea-builds.
-
+All the GraalPython related documentation has been moved in its own file [GraalPython.md](GraalPython.md)
 #### References
 - [GraalVM Native Image Quick Reference v1](https://medium.com/graalvm/graalvm-native-image-quick-reference-4ceb84560fd8) and [GraalVM Native Image Quick Reference v2](https://medium.com/graalvm/native-image-quick-reference-v2-332cf453d1bc) by Olga Gupalo
 - [Memory Management at Native Image Run Time](https://docs.oracle.com/en/graalvm/enterprise/20/docs/reference-manual/native-image/MemoryManagement)
@@ -623,3 +527,4 @@ $ mvn -DMAVEN_REPOSITORY=/tmp/graalpy-25.0-mvn \
 - [Quarkus - Including Native Libraries in the Native Image](https://github.com/quarkusio/quarkus/blob/main/adr/0006-native-compilation-with-binary-libraries.adoc)
 - [[GR-39406] Add new class initialization strategy that allows all classes to be used at image build time.](https://github.com/oracle/graal/pull/4684)
 - [Initialize once, start fast: application initialization at build time](https://www.researchgate.net/publication/336450138_Initialize_once_start_fast_application_initialization_at_build_time)
+- [Python Standalone Applications](https://docs.oracle.com/en/graalvm/jdk/22/docs/reference-manual/python/standalone-applications/), implemented in [\_\_main\_\_.py](https://github.com/oracle/graalpython/blob/release/graal-vm/25.0/graalpython/lib-graalpython/modules/standalone/__main__.py) and [Py2BinLauncher.java](https://github.com/oracle/graalpython/blob/release/graal-vm/25.0/graalpython/lib-graalpython/modules/standalone/resources/Py2BinLauncher.java).
