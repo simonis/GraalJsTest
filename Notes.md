@@ -336,7 +336,7 @@ $ MX_ALT_OUTPUT_ROOT=/tmp/libgraal-master \
      --disable-installables=true \
      build --targets libjvmcicompiler.so.image
 ```
-The `--dynamicimports`, `--components`, `--native-images` and `--disable-installables` are an alternative for using `--env libgraal` as described above. The latter just takes the corresponding options from `graal/vm/mx.vm/libgraal`. I still don't know where I can find the target `libjvmcicompiler.so.image` because neither `mx suites` nor `mx graalvm-show` displays it? But without `--targets libjvmcicompiler.so.image` the build takes longer and produces conisderable more output in `MX_ALT_OUTPUT_ROOT`.
+The `--dynamicimports`, `--components`, `--native-images` and `--disable-installables` are an alternative for using `--env libgraal` as described above. The latter just takes the corresponding options from `graal/vm/mx.vm/libgraal`. I still don't know where I can find the target `libjvmcicompiler.so.image` because neither `mx suites` nor `mx graalvm-show` displays it? But without `--targets libjvmcicompiler.so.image` the build takes longer and produces considerably more output in `MX_ALT_OUTPUT_ROOT`.
 
 ##### Building libgraal with Mandrel and OpenJDK
 

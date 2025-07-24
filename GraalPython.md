@@ -4,7 +4,6 @@
 
 As for [GraalJS](Notes.md#building-graaljs), we first need to clone the [GraalPython](https://github.com/oracle/graalpython) repository in parallel to main [Graal](https://github.com/oracle/graal.git) and [`mx`](https://github.com/graalvm/mx.git) repositories. Graal and GraalPython should be synced to the same version (e.g. `release/graal-vm/25.0`) and `mx` should be checked out at the `mx_version` referenced in `graal/common.json` (e.g. `7.54.3`).
 
-
 In order to build the GraalPython jars/modules along with their dependencies we can do the following:
 ```bash
 $ cd graalpython
@@ -149,6 +148,73 @@ $ mvn -DMAVEN_REPOSITORY=/tmp/graalpy-25.0-mvn \
 > [!NOTE]
 > It is also possible to download pre-built Maven bundles (e.g. [maven-resource-bundle-community-dev.tar.gz](https://github.com/graalvm/graalvm-ce-dev-builds/releases/download/25.0.0-dev-20250607_2256/maven-resource-bundle-community-dev.tar.gz)) for the latest GraalVM Community development builds from https://github.com/graalvm/graalvm-ce-dev-builds as well as Oracle GraalVM early access builds (including Maven bundles) from https://github.com/graalvm/oracle-graalvm-ea-builds.
 
+#### Building the GraalPython standalone distributions
+
+A GraalPython standalone distribution is basically a stripped down JDK with only the three launchers `python`, `python3` and `graalpy` and all the required classes to run Python (up until 24.2.0, they also contained `graalpy-lt`, a "*launcher to use LLVM toolchain and Sulong execution of native extensions*", but that was deprecated and removed in GraalVM 25.0.0).
+
+The standalone distributions come in three flavours: with a standard JDK and "jargraal" (see [Notes.md](./Notes.md#building-the-graalvm-compiler)), with a standard JDK and "libgraal" (i.e. the natively compiled version of the Graal compiler) and as a native version without bundled JDK where GraalPy and all its dependencies are compiled into a huge shared library (i.e. [isolate](./Notes.md#graalvm)) called `libpythonvm.so`. They can be build with `mx --env jvm-ce`, `mx --env jvm-ce-libgraal` and `mx --env native-ce` respectively which corresponds to the following build command lines if the predefined environment files `./mx.graalpython/{jvm-ce,jvm-ce-libgraal,native-ce}` are not used:
+
+```bash
+$ MX_ALT_OUTPUT_ROOT=/tmp/graalpy-25.0 \
+  mx \
+  --dynamicimports /compiler \
+  build --build-logs oneline \
+  --targets GRAALPY_JVM_STANDALONE
+...
+$ $MX_ALT_OUTPUT_ROOT/graalpython/linux-amd64/GRAALPY_JVM_STANDALONE/bin/graalpy
+Python 3.11.7 (Tue Jul 22 21:00:56 CEST 2025)
+[Graal, Interpreted, Java 25.0.1-internal (amd64)] on linux
+Type "help", "copyright", "credits" or "license" for more information.
+>>>
+```
+
+```bash
+$ MX_ALT_OUTPUT_ROOT=/tmp/graalpy-25.0 \
+  mx \
+  --dynamicimports /compiler \
+  --dynamicimports /substratevm \
+  --native-images=lib:jvmcicompiler \
+  --components=LibGraal \
+  build --build-logs oneline \
+  --targets GRAALPY_JVM_STANDALONE
+...
+$ $MX_ALT_OUTPUT_ROOT/graalpython/linux-amd64/GRAALPY_JVM_STANDALONE/bin/graalpy
+Python 3.11.7 (Wed Jul 23 16:37:23 CEST 2025)
+[Graal, GraalVM CE, Java 25.0.1-internal (amd64)] on linux
+Type "help", "copyright", "credits" or "license" for more information.
+>>> __graalpython__.is_native
+False
+```
+
+```bash
+$ MX_ALT_OUTPUT_ROOT=/tmp/graalpy-25.0 \
+  mx \
+  --dynamicimports /compiler \
+  --dynamicimports /substratevm \
+  --native-images=lib:pythonvm \
+  --components=SubstrateVM,'Truffle SVM Macro' \
+  build --build-logs oneline \
+  --targets GRAALPY_NATIVE_STANDALONE
+...
+$ $MX_ALT_OUTPUT_ROOT/graalpython/linux-amd64/GRAALPY_NATIVE_STANDALONE/bin/graalpy
+Python 3.11.7 (Thu Jul 24 17:24:44 CEST 2025)
+[Graal, GraalVM CE, Java 25.0.1-internal (amd64)] on linux
+Type "help", "copyright", "credits" or "license" for more information.
+>>> __graalpython__.is_native
+True
+```
+
+The distros can afterwards be found under `$MX_ALT_OUTPUT_ROOT/graalpython/linux-amd64/GRAALPY_JVM_STANDALONE/` and `$MX_ALT_OUTPUT_ROOT/graalpython/linux-amd64/GRAALPY_NATIVE_STANDALONE/` respectively.
+
+### Building Python modules/wheels from source
+
+Once we've build a GraalPy standalone distribution, we can
 ### Resources management in GraalVM Ployglot/Truffle
 
 The Truffle framework has a sophisticated machinery for extracting, caching and handling resources required by Truffle itself but is also used by embedded languages and tools. Whenever a polyglot [`Engine`](https://www.graalvm.org/sdk/javadoc/org/graalvm/polyglot/Engine.html) is created, it will first setup all the required resources.
+
+
+#### References
+
+- [Pre-build binary wheels provided by the GraalPy team](https://www.graalvm.org/python/wheels/)
+- [Introduction to the Python implementation for GraalVM](https://medium.com/graalvm/how-to-contribute-to-graalpython-7fd304fe8bb9): nice blog about some GraalPy implementation details, but unfortunately a little outdated in some parts because it is from Aug. 2019.
