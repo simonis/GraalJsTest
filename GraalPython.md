@@ -206,9 +206,68 @@ True
 
 The distros can afterwards be found under `$MX_ALT_OUTPUT_ROOT/graalpython/linux-amd64/GRAALPY_JVM_STANDALONE/` and `$MX_ALT_OUTPUT_ROOT/graalpython/linux-amd64/GRAALPY_NATIVE_STANDALONE/` respectively.
 
-### Building Python modules/wheels from source
+### Bootstrapping GraalPy
 
-Once we've build a GraalPy standalone distribution, we can
+Once we've build a GraalPy standalone distribution, we can use it to create virtual environments and use `pip` to install additional modules. Assuming we have `$MX_ALT_OUTPUT_ROOT/graalpython/linux-amd64/GRAALPY_JVM_STANDALONE/bin/` in the `PATH` we can run:
+
+```bash
+$ graalpy -m venv numpy-graalpy
+$ source numpy-graalpy/bin/activate
+(numpy-graalpy) $
+```
+
+The `venv` module is located under `GRAALPY_JVM_STANDALONE/lib/python3.11/venv` in the standalone distribution or packaged as resource in the `python-resources.jar` file for the embedded use. In the latter case, it will be extracted automatically to  `~/.cache/org.graalvm.polyglot/python/python-home/e41832d1c8ba537cb2b83ce5a12dcd2887406294/lib/python3.11/venv` before the first usage (for more details see the [section on resources management](#resources-management-in-graalvm-ployglottruffle)).
+
+`venv` uses the `ensurepip` module (see the [`ensurepip` documentation](https://docs.python.org/3/library/ensurepip.html)) from the same location to install `pip` into the newly created virtual environment. `ensurepip` has a bundled version of `pip` and `setuptools` which is a dependency of `pip`.
+
+When calling `graalpy -m venv numpy-graalpy` the `venv` module will first create the `numpy-graalpy/` directory with the following layout:
+
+```bash
+$ find numpy-graalpy/
+numpy-graalpy/
+numpy-graalpy/include
+numpy-graalpy/include/python3.11
+numpy-graalpy/lib
+numpy-graalpy/lib/python3.11
+numpy-graalpy/lib/python3.11/site-packages
+numpy-graalpy/bin
+numpy-graalpy/bin/python3.11
+numpy-graalpy/bin/graalpy
+numpy-graalpy/bin/python
+numpy-graalpy/bin/python3
+numpy-graalpy/pyvenv.cfg
+```
+
+On Posix systems, all the entries in `numpy-graalpy/bin/` are symlinks to the `graalpy` executable in our standalone GraalPython distribution (i.e. `$MX_ALT_OUTPUT_ROOT/graalpython/linux-amd64/GRAALPY_JVM_STANDALONE/bin/graalpy`). Once that is done, `venv` will call `EnvBuilder::create()` which will finally spawn a new subprocess to execute `numpy-graalpy/bin/graalpy -m ensurepip --upgrade --default-pip`.
+
+Next, `ensurepip` will copy the  `pip`/`setuptools` wheels from its resources directory (i.e. `GRAALPY_JVM_STANDALONE/lib/python3.11/ensurepip/_bundled/`) into a temporary directory and spawn another subprocess to execute a dynamically generated Python script which prepends the newly created temporary directory with the `pip`/`setuptools` wheels to its `sys.path` and then runs `pip` from that path to install the `pip` and `setuptools` wheels into the newly created virtual environment:
+```bash
+$ numpy-graalpy/bin/graalpy -W ignore::DeprecationWarning -c "
+import runpy
+import sys
+sys.path = ['/tmp/tmpunk1gxro/setuptools-65.5.0-py3-none-any.whl', '/tmp/tmpunk1gxro/pip-23.2.1-py3-none-any.whl'] + sys.path
+sys.argv[1:] = ['install', '--no-cache-dir', '--no-index', '--find-links', '/tmp/tmpunk1gxro', '--upgrade', 'setuptools', 'pip']
+runpy.run_module('pip', run_name='__main__', alter_sys=True)"
+```
+
+Notice that the bundled `pip` version is already patched for GraalPy. I.e. `GRAALPY_JVM_STANDALONE/lib/python3.11/ensurepip/_bundled/pip-23.2.1-py3-none-any.whl` corresponds to the original, upstream version of [`pip-23.2.1-py3-none-any.whl`](https://pypi.org/project/pip/23.2.1/#files) with the patches from [`graalpython/lib-graalpython/patches/pip-23.2.1.patch`](https://github.com/oracle/graalpython/blob/release/graal-vm/25.0/graalpython/lib-graalpython/patches/pip-23.2.1.patch) applied to it (plus the additional, empty `pip-23.2.1.dist-info/GRAALPY_MARKER` file added to it). There exists a script called [`scripts/repack-bundled-wheels.sh`](https://github.com/oracle/graalpython/blob/release/graal-vm/25.0/scripts/repack-bundled-wheels.sh) in the GraalPy repository which is supposed to do this repackaging, but it depends on the `python-import` branch, which is currently not present in the public GraalPy repository.
+
+One of the changes in the GraalPy-specific version of `pip` is in the [`_install_wheel()`](https://github.com/pypa/pip/blob/4a79e65cb6aac84505ad92d272a29f0c3c1aedce/src/pip/_internal/operations/install/wheel.py#L432) function, where the following code has been added:
+```patch
+@@ -591,6 +591,9 @@ def _install_wheel(
+     for file in files:
+         file.save()
+         record_installed(file.src_record_path, file.dest_path, file.changed)
+
++    from pip._internal.utils.graalpy import apply_graalpy_patches
++    apply_graalpy_patches(wheel_path, lib_dir)
++
+```
+
+As you can see, for every installed wheel, the function now calls the `apply_graalpy_patches()` function which checks for module-specific patches either locally under `GRAALPY_JVM_STANDALONE/lib/graalpy25.0/patches` or remotly at `https://raw.githubusercontent.com/oracle/graalpython/refs/heads/github/patches/25.0.0/graalpython/lib-graalpython/patches/` and applies them if we are not running with the environment variable `PIP_GRAALPY_DISABLE_PATCHING=true` or if the module in question has a `*.dist-info/GRAALPY_MARKER` file (like e.g. the bundled `pip` wheel as detailed above).
+
+> [!NOTE]
+> This section reflects the an early state of the `release/graal-vm/25.0` branch. In later versions, `pip` 23.2.1 was replaced by 24.3.1 and the `setuptools` wheels was removed from the `ensurepip`'s bundled modules.
 ### Resources management in GraalVM Ployglot/Truffle
 
 The Truffle framework has a sophisticated machinery for extracting, caching and handling resources required by Truffle itself but is also used by embedded languages and tools. Whenever a polyglot [`Engine`](https://www.graalvm.org/sdk/javadoc/org/graalvm/polyglot/Engine.html) is created, it will first setup all the required resources.
