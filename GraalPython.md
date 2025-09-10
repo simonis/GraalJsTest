@@ -152,7 +152,7 @@ $ mvn -DMAVEN_REPOSITORY=/tmp/graalpy-25.0-mvn \
 
 A GraalPython standalone distribution is basically a stripped down JDK with only the three launchers `python`, `python3` and `graalpy` and all the required classes to run Python (up until 24.2.0, they also contained `graalpy-lt`, a "*launcher to use LLVM toolchain and Sulong execution of native extensions*", but that was deprecated and removed in GraalVM 25.0.0).
 
-The standalone distributions come in three flavours: with a standard JDK and "jargraal" (see [Notes.md](./Notes.md#building-the-graalvm-compiler)), with a standard JDK and "libgraal" (i.e. the natively compiled version of the Graal compiler) and as a native version without bundled JDK where GraalPy and all its dependencies are compiled into a huge shared library (i.e. [isolate](./Notes.md#graalvm)) called `libpythonvm.so`. They can be build with `mx --env jvm-ce`, `mx --env jvm-ce-libgraal` and `mx --env native-ce` respectively which corresponds to the following build command lines if the predefined environment files `./mx.graalpython/{jvm-ce,jvm-ce-libgraal,native-ce}` are not used:
+The standalone distributions come in three flavours: with a standard JDK and "jargraal" (see [Notes.md](./Notes.md#building-the-graalvm-compiler)), with a standard JDK and "libgraal" (i.e. the natively compiled version of the Graal compiler) and as a native version without bundled JDK where GraalPy and all its dependencies are compiled into a huge shared library (i.e. [isolate](./Notes.md#graalvm)) called `libpythonvm.so`. They can be build with `mx --env jvm-ce`, `mx --env jvm-ce-libgraal` and `mx --env native-ce` respectively which correspond to the following build command lines if the predefined environment files `./mx.graalpython/{jvm-ce,jvm-ce-libgraal,native-ce}` are not used:
 
 ```bash
 $ MX_ALT_OUTPUT_ROOT=/tmp/graalpy-25.0 \
@@ -204,11 +204,26 @@ Type "help", "copyright", "credits" or "license" for more information.
 True
 ```
 
-The distros can afterwards be found under `$MX_ALT_OUTPUT_ROOT/graalpython/linux-amd64/GRAALPY_JVM_STANDALONE/` and `$MX_ALT_OUTPUT_ROOT/graalpython/linux-amd64/GRAALPY_NATIVE_STANDALONE/` respectively.
+Affter the build, the distros can be found under `$MX_ALT_OUTPUT_ROOT/graalpython/linux-amd64/GRAALPY_JVM_STANDALONE/` and `$MX_ALT_OUTPUT_ROOT/graalpython/linux-amd64/GRAALPY_NATIVE_STANDALONE/` respectively.
+
+> [!NOTE]
+> Standalone distributions are not immutable. If you run Python from such a distribution, Python files from the distribution which are executed will be compiled and the generated `*.pyc` files will be placed in corresponding `__pycache__` subdirectories under `GRAALPY_JVM_STANDALONE/lib/python3.12/`. This behaviour can be disabled with the `-B` command line option.
 
 ### Bootstrapping GraalPy
 
-Once we've build a GraalPy standalone distribution, we can use it to create virtual environments and use `pip` to install additional modules. Assuming we have `$MX_ALT_OUTPUT_ROOT/graalpython/linux-amd64/GRAALPY_JVM_STANDALONE/bin/` in the `PATH` we can run:
+Once we've build a GraalPy standalone distribution and assuming we have `$MX_ALT_OUTPUT_ROOT/graalpython/linux-amd64/GRAALPY_JVM_STANDALONE/bin/` in the `PATH` we can use it like a normal Python interpreter:
+
+```bash
+$ graalpy
+Python 3.12.8 (Thu Jul 31 10:44:49 CEST 2025)
+[Graal, GraalVM CE, Java 25.0.1-internal (amd64)] on linux
+Type "help", "copyright", "credits" or "license" for more information.
+>>>
+```
+
+Because this is still running on a JDK, we can easily debug the Java implementation by supplying the `--vm.agentlib:jdwp=transport=dt_socket,server=y,address=8080,suspend=y` command line argument (`--help` will list all the available Python, JVM, Engine and Tools options). Setting `VERBOSE_GRAALVM_LAUNCHERS=true` will let the launcher be more verbose and e.g. print out the JVM arguments it uses to start the underlying JVM.
+
+We can also use `graalpy` to create virtual environments and `pip` to install additional modules:
 
 ```bash
 $ graalpy -m venv numpy-graalpy
@@ -238,7 +253,7 @@ numpy-graalpy/bin/python3
 numpy-graalpy/pyvenv.cfg
 ```
 
-On Posix systems, all the entries in `numpy-graalpy/bin/` are symlinks to the `graalpy` executable in our standalone GraalPython distribution (i.e. `$MX_ALT_OUTPUT_ROOT/graalpython/linux-amd64/GRAALPY_JVM_STANDALONE/bin/graalpy`). Once that is done, `venv` will call `EnvBuilder::create()` which will finally spawn a new subprocess to execute `numpy-graalpy/bin/graalpy -m ensurepip --upgrade --default-pip`.
+On Posix systems, all the entries in `numpy-graalpy/bin/` are symlinks to the `graalpy` executable of the standalone GraalPython distribution that was used to create the virtual environment (i.e. `$MX_ALT_OUTPUT_ROOT/graalpython/linux-amd64/GRAALPY_JVM_STANDALONE/bin/graalpy`). Once that has been done, `venv` will call `EnvBuilder::create()` which will finally spawn a new subprocess to execute `numpy-graalpy/bin/graalpy -m ensurepip --upgrade --default-pip`.
 
 Next, `ensurepip` will copy the  `pip` and `setuptools` wheels from its resources directory (i.e. `GRAALPY_JVM_STANDALONE/lib/python3.11/ensurepip/_bundled/`) into a temporary directory and spawn another subprocess to execute a dynamically generated Python script which prepends the newly created temporary directory with the `pip`/`setuptools` wheels to its `sys.path` and then runs `pip` from that path to install the `pip` and `setuptools` wheels into the newly created virtual environment:
 ```bash
@@ -250,7 +265,7 @@ sys.argv[1:] = ['install', '--no-cache-dir', '--no-index', '--find-links', '/tmp
 runpy.run_module('pip', run_name='__main__', alter_sys=True)"
 ```
 
-Notice that the bundled `pip` version is already patched for GraalPy. I.e. `GRAALPY_JVM_STANDALONE/lib/python3.11/ensurepip/_bundled/pip-23.2.1-py3-none-any.whl` corresponds to the original, upstream version of [`pip-23.2.1-py3-none-any.whl`](https://pypi.org/project/pip/23.2.1/#files) with the patches from [`graalpython/lib-graalpython/patches/pip-23.2.1.patch`](https://github.com/oracle/graalpython/blob/release/graal-vm/25.0/graalpython/lib-graalpython/patches/pip-23.2.1.patch) applied to it (plus the additional, empty `pip-23.2.1.dist-info/GRAALPY_MARKER` file added to it). There exists a script called [`scripts/repack-bundled-wheels.sh`](https://github.com/oracle/graalpython/blob/release/graal-vm/25.0/scripts/repack-bundled-wheels.sh) in the GraalPy repository which is supposed to do this repackaging, but it depends on the `python-import` branch, which is currently not present in the public GraalPy repository.
+Notice that the bundled `pip` version is already patched for GraalPy. I.e. `GRAALPY_JVM_STANDALONE/lib/python3.11/ensurepip/_bundled/pip-23.2.1-py3-none-any.whl` corresponds to the original, upstream version of [`pip-23.2.1-py3-none-any.whl`](https://pypi.org/project/pip/23.2.1/#files) with the patches from [`graalpython/lib-graalpython/patches/pip-23.2.1.patch`](https://github.com/oracle/graalpython/blob/release/graal-vm/25.0/graalpython/lib-graalpython/patches/pip-23.2.1.patch) applied to it (plus the additional, empty `pip-23.2.1.dist-info/GRAALPY_MARKER` file added to it). There exists a script called [`scripts/repack-bundled-wheels.sh`](https://github.com/oracle/graalpython/blob/release/graal-vm/25.0/scripts/repack-bundled-wheels.sh) in the GraalPy repository which is supposed to do this repackaging, but it depends on the `python-import` branch, which is currently not present in the public GraalPy repository (see [graalpython issue 536](https://github.com/oracle/graalpython/issues/536)).
 
 One of the changes in the GraalPy-specific version of `pip` is in the [`_install_wheel()`](https://github.com/pypa/pip/blob/4a79e65cb6aac84505ad92d272a29f0c3c1aedce/src/pip/_internal/operations/install/wheel.py#L432) function, where the following code has been added:
 ```patch
@@ -264,22 +279,60 @@ One of the changes in the GraalPy-specific version of `pip` is in the [`_install
 +
 ```
 
-As you can see, for every installed wheel (but [`sourcedist`](https://docs.python.org/3.10/distutils/sourcedist.html)'s can be patched as well), the function now calls the `apply_graalpy_patches()` function which first checks for module-specific patches remotly at `https://raw.githubusercontent.com/oracle/graalpython/refs/heads/github/patches/25.0.0/graalpython/lib-graalpython/patches/` or otherwise locally under `GRAALPY_JVM_STANDALONE/lib/graalpy25.0/patches` and applies them if we are not running with the environment variable `PIP_GRAALPY_DISABLE_PATCHING=true` or if the module in question doesn't have a `*.dist-info/GRAALPY_MARKER` file (like e.g. the bundled `pip` wheel as discussed before).
+As you can see, for every [wheel](https://wheel.readthedocs.io/en/stable/) (also see [PEP 427 – The Wheel Binary Package Format](https://peps.python.org/pep-0427/)) that will be installed (but [source distributions](https://packaging.python.org/en/latest/specifications/source-distribution-format/) (a.k.a. 'sdists') can be patched as well), the function now calls the `apply_graalpy_patches()` function which first checks for module-specific patches remotly at `https://raw.githubusercontent.com/oracle/graalpython/refs/heads/github/patches/25.0.0/graalpython/lib-graalpython/patches/` or otherwise locally under `GRAALPY_JVM_STANDALONE/lib/graalpy25.0/patches` and applies them if we are not running with the environment variable `PIP_GRAALPY_DISABLE_PATCHING=true` or if the module in question doesn't have a `*.dist-info/GRAALPY_MARKER` file (like e.g. the bundled `pip` wheel discussed before).
 
 If you are building a development version of GraalPY (as I've done for these experiments), the GraalPy version (i.e. `graalpy --version` or `__graalpython__.get_graalvm_version()` on the Python CLI) will be `25.0.0-dev` by default and the `-dev` suffix [will suppress](https://github.com/oracle/graalpython/blob/497720e5159a7c64188cdce16bafb526a97355f6/graalpython/lib-graalpython/patches/pip-23.2.1.patch#L337) the usage of the remote repository for patches and instead fall back to the local, bundled patches. But the GraalPy version used by `pip` can be tweaked by setting the `TEST_PIP_GRAALPY_VERSION` environment variable to a corresponding value (e.g. `24.2.0`).
 
 Also notice that the bundled patches in a standalone GraalPY distribution are the same patches like the ones in the `graalpython/lib-graalpython/patches` directory of the corresponding branch from which the distribution was built (e.g. [`release/graal-vm/24.2`](https://github.com/oracle/graalpython/tree/release/graal-vm/24.2/graalpython/lib-graalpython/patches) or [`release/graal-vm/25.0`](https://github.com/oracle/graalpython/tree/release/graal-vm/25.0/graalpython/lib-graalpython/patches)). However, the online patches that `pip` tries to access at runtime are from different branches (e.g. [`github/patches/24.2.0`](https://github.com/oracle/graalpython/tree/github/patches/24.2.0/graalpython/lib-graalpython/patches) or [`github/patches/24.2.1`](https://github.com/oracle/graalpython/tree/github/patches/24.2.1/graalpython/lib-graalpython/patches)). This ensures that the patches can be update individually for each release even after a release was shipped.
 
-Finally, patching of wheels or source distributions can be completely disables by setting `PIP_GRAALPY_DISABLE_PATCHING=true`, the online URL for patches can be configured with `PIP_GRAALPY_PATCHES_URL=<url>` (the corresponding directory is expected to contain a file called [`metadata.toml`](https://github.com/oracle/graalpython/blob/github/patches/24.2.1/graalpython/lib-graalpython/patches/metadata.toml) which lists all the patches in a format described in the associated [README.md](https://github.com/oracle/graalpython/blob/github/patches/24.2.1/graalpython/lib-graalpython/patches/README.md) file) and version selection can be disabled by setting `PIP_GRAALPY_DISABLE_VERSION_SELECTION=true` (this disables the preference of packages with patches over packages whithout patches).
+Finally, patching of wheels or source distributions can be completely disables by setting `PIP_GRAALPY_DISABLE_PATCHING=true`, the online URL for patches can be configured with `PIP_GRAALPY_PATCHES_URL=<url>` (the corresponding directory is expected to contain a file called [`metadata.toml`](https://github.com/oracle/graalpython/blob/github/patches/24.2.1/graalpython/lib-graalpython/patches/metadata.toml) which lists all the patches in a format described in the associated [README.md](https://github.com/oracle/graalpython/blob/github/patches/24.2.1/graalpython/lib-graalpython/patches/README.md) file) and version selection can be disabled by setting `PIP_GRAALPY_DISABLE_VERSION_SELECTION=true` (this disables the preference of packages with patches over packages without patches).
 
 > [!NOTE]
-> This section reflects the an early state of the `release/graal-vm/25.0` branch. In later versions, `pip` 23.2.1 was replaced by 24.3.1 and the `setuptools` wheels was removed from the `ensurepip`'s bundled modules.
+> This section reflects the an early state of the `release/graal-vm/25.0` branch. In later versions, `pip` 23.2.1 was replaced by 24.3.1 and the `setuptools` wheels was removed from the `ensurepip`'s bundled modules. Also, the Python version was upgraded from 3.11.7 to 3.12.8.
+
 ### Resources management in GraalVM Ployglot/Truffle
 
-The Truffle framework has a sophisticated machinery for extracting, caching and handling resources required by Truffle itself but is also used by embedded languages and tools. Whenever a polyglot [`Engine`](https://www.graalvm.org/sdk/javadoc/org/graalvm/polyglot/Engine.html) is created, it will first setup all the required resources.
+The Truffle framework has a sophisticated machinery for extracting, caching and handling resources required by Truffle itself but also by embedded languages and tools. Whenever a polyglot [`Engine`](https://www.graalvm.org/sdk/javadoc/org/graalvm/polyglot/Engine.html) is created, it will first setup all these required resources. The resources are expected to implement the [`com.oracle.truffle.api.InternalResource`](https://www.graalvm.org/25.0/javadoc/truffle/com/oracle/truffle/api/InternalResource.html) interface.
+
+#### Loading the Truffle attach API
+Since GraalVM 23.1, the optimizing Truffle runtime uses a native library called `libtruffleattach.so` to manage access to JDK internals. Initially this was used to open JVMCI to Truffle (see [[GR-44182] Open JVMCI to Truffle runtime](https://github.com/oracle/graal/pull/6778)), later to add exports required by the compiler ([[GR-54828] Use truffleattach to avoid the need for --add-exports..](https://github.com/oracle/graal/pull/9200)) and lately to register some JVMTI callbacks for virtual thread support ([[GR-40931] Add experimental Truffle support for VirtualThread on HotSpot](https://github.com/oracle/graal/pull/9064)).
+
+Until JDK 24, loading of `libtruffleattach.so` happened silently, during the initialization of Truffle, but since JDK 24, loading of native libraries triggers a warning (because of [JEP 472: Prepare to Restrict the Use of JNI](https://openjdk.org/jeps/472)). To silent the warning (and potential errors in the future) it is now necessary to use `--enable-native-access=org.graalvm.truffle` (see [[GR-57817] Prepare JNI and Unsafe usage for JDK 24](https://github.com/oracle/graal/pull/9892)). Also notice that the permission for native access is now [automatically propagated](https://github.com/oracle/graal/blob/2b8324dd0ca3d73feb55e71f9b4191f036c68694/truffle/CHANGELOG.md?plain=1#L52) by Truffle to all registered languages and tools.
+
+The official [`org.graalvm.truffle » truffle-api`](https://mvnrepository.com/artifact/org.graalvm.truffle/truffle-api) artifacts already contain the native version of the `truffleattach` library for all the officially supported platforms:
+```
+    33832  META-INF/resources/engine/libtruffleattach/linux/amd64/bin/libtruffleattach.so
+    88376  META-INF/resources/engine/libtruffleattach/linux/aarch64/bin/libtruffleattach.so
+    50016  META-INF/resources/engine/libtruffleattach/darwin/amd64/bin/libtruffleattach.dylib
+    50563  META-INF/resources/engine/libtruffleattach/darwin/aarch64/bin/libtruffleattach.dylib
+     9728  META-INF/resources/engine/libtruffleattach/windows/amd64/bin/truffleattach.dll
+```
+However, if you build `truffle-api` from source, it will only contain the version for the build platform and it is the responsibility of the developer to add other required versions of the library.
+
+> [!NOTE]
+> Before Graal version 24.2.0, the `truffleattach` library was included in the [`org.graalvm.truffle » truffle-runtime`](https://mvnrepository.com/artifact/org.graalvm.truffle/truffle-runtime) package (see [[GR-57817] Prepare JNI and Unsafe usage for JDK 24](https://github.com/oracle/graal/pull/9892)).
+
+If loading of the `truffleattach` library fails (we can simulate this e.g. by removing it from the `.jar` file) Truffle will fall back to using the so called "fallback" engine which will not use the Graal JIT compiler to optimize guest language code:
+```
+[engine] WARNING: The Truffle API JAR is missing the 'truffleattach' resource, likely due to issues when Truffle was repackaged into a fat JAR.
+As a result, the optimized Truffle runtime is unavailable, and Truffle cannot provide native access to languages and tools.
+To customize the behavior of this warning, use the 'polyglotimpl.AttachLibraryFailureAction' system property.
+Allowed values are:
+  - ignore:    Do not print this warning.
+  - warn:      Print this warning (default value).
+  - diagnose:  Print this warning along with the exception cause.
+  - throw:     Throw an exception instead of printing this warning.
+
+java.nio.file.NoSuchFileException: META-INF/resources/engine/libtruffleattach/linux/amd64/sha256
+	at com.oracle.truffle.api.InternalResource$Env.getResourceStream(InternalResource.java:341)
+    ...
+```
+The system property `polyglotimpl.AttachLibraryFailureAction` can be used to configure the behavior when `truffleattach` can't be loaded. GraalVM 24.0.0 (see [[GR-50262]](https://github.com/oracle/graal/pull/7920)) also added the new property `-Dtruffle.UseFallbackRuntime=true` which makes it possible to explicitly select the default runtime. Before that it was required to make that more explicit with `-Dtruffle.TruffleRuntime=com.oracle.truffle.api.impl.DefaultTruffleRuntime` (other valid values are `com.oracle.truffle.runtime.hotspot.HotSpotTruffleRuntime` which is the optimizing runtime and `com.oracle.svm.truffle.api.SubstrateTruffleRuntime` which is the Truffle runtime used in native images).
 
 
 #### References
 
 - [Pre-build binary wheels provided by the GraalPy team](https://www.graalvm.org/python/wheels/)
 - [Introduction to the Python implementation for GraalVM](https://medium.com/graalvm/how-to-contribute-to-graalpython-7fd304fe8bb9): nice blog about some GraalPy implementation details, but unfortunately a little outdated in some parts because it is from Aug. 2019.
+- [Python Standalone Applications](https://docs.oracle.com/en/graalvm/jdk/22/docs/reference-manual/python/standalone-applications/), implemented in [\_\_main\_\_.py](https://github.com/oracle/graalpython/blob/release/graal-vm/25.0/graalpython/lib-graalpython/modules/standalone/__main__.py) and [Py2BinLauncher.java](https://github.com/oracle/graalpython/blob/release/graal-vm/25.0/graalpython/lib-graalpython/modules/standalone/resources/Py2BinLauncher.java).
+- Python [Platform compatibility tags](https://packaging.python.org/en/latest/specifications/platform-compatibility-tags/) (also see [PEP 425 – Compatibility Tags for Built Distributions](https://peps.python.org/pep-0425/))
