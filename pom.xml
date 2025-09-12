@@ -9,6 +9,20 @@
   <artifactId>graal-js-test</artifactId>
   <version>1.0-SNAPSHOT</version>
 
+  <repositories>
+    <!--
+        Local repository with snapshot builds.
+    -->
+    <repository>
+      <id>graalvm-snapshot-repo</id>
+      <name>graalvm-snapshot-repo</name>
+      <url>file://${MAVEN_REPOSITORY}</url>
+      <snapshots>
+        <enabled>true</enabled>
+      </snapshots>
+    </repository>
+  </repositories>
+
   <properties>
     <maven.compiler.source>17</maven.compiler.source>
     <maven.compiler.target>17</maven.compiler.target>
@@ -32,6 +46,61 @@
         <dependency>
           <groupId>org.graalvm.polyglot</groupId>
           <artifactId>js-community</artifactId>
+          <version>${graalvm.version}</version>
+          <type>pom</type>
+        </dependency>
+        <dependency>
+          <groupId>org.graalvm.truffle</groupId>
+          <artifactId>truffle-api</artifactId>
+          <version>${graalvm.version}</version>
+        </dependency>
+        <dependency>
+          <groupId>org.graalvm.truffle</groupId>
+          <artifactId>truffle-dsl-processor</artifactId>
+          <version>${graalvm.version}</version>
+        </dependency>
+        <dependency>
+          <groupId>org.graalvm.tools</groupId>
+          <artifactId>profiler-tool</artifactId>
+          <version>${graalvm.version}</version>
+        </dependency>
+        <dependency>
+          <groupId>org.graalvm.sdk</groupId>
+          <artifactId>nativeimage</artifactId>
+          <version>${graalvm.version}</version>
+          <scope>provided</scope>
+        </dependency>
+        <dependency>
+          <groupId>org.graalvm.nativeimage</groupId>
+          <artifactId>native-image-base</artifactId>
+          <version>${graalvm.version}</version>
+          <scope>provided</scope>
+        </dependency>
+      </dependencies>
+    </profile>
+
+    <profile>
+      <id>graal-25-0-0</id>
+      <build>
+        <directory>${basedir}/target-25-0-0</directory>
+      </build>
+      <activation>
+        <property>
+          <name>MAVEN_REPOSITORY</name>
+        </property>
+      </activation>
+      <properties>
+        <graalvm.version>25.0.0-SNAPSHOT</graalvm.version>
+      </properties>
+      <dependencies>
+        <dependency>
+          <groupId>org.graalvm.polyglot</groupId>
+          <artifactId>polyglot</artifactId>
+          <version>${graalvm.version}</version>
+        </dependency>
+        <dependency>
+          <groupId>org.graalvm.js</groupId>
+          <artifactId>js</artifactId>
           <version>${graalvm.version}</version>
           <type>pom</type>
         </dependency>
@@ -273,6 +342,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
+        <version>3.1</version>
         <configuration>
           <excludes>
             <exclude>**/io/simonis/graalpython/**</exclude>

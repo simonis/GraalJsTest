@@ -46,6 +46,14 @@
 
 #### Building GraalJS
 
+To build GraalJS you have to check out the Graal repository at the same directory level like the GraalJS repository (as showed in the build instructions above). If you don't do this, `mx build` will automatically clone the Graal repository at the commit specified in the `imports` section of `./graal-js/mx.graal-js/suite.py`.
+
+The file `common.json` in the `graaljs` repository contains the version of `mx` that should be used for building GraalJS. It should be the same like `mx_version` in the `./graal` repository if both repositories are synced to the same tag or branch (e.g. `release/graal-vm/23.1` in this example).
+
+Notice that although GraalVM `23.1` is targeted for JDK 21, the pure Java artifacts built from the tag `release/graal-vm/23.1` of these libraries can be build (and the results can be used) with OpenJDK 17 and later.
+
+The [release/graal-vm/23.1](https://github.com/oracle/graal/tree/release/graal-vm/23.1) branch for GraalVM `23.1` for JDK 21 isn't supported by Oracle any more (at least not publicly). It has been moved to the master branch of the new [https://github.com/graalvm/graalvm-community-jdk21u](https://github.com/graalvm/graalvm-community-jdk21u) repository which is now maintained by the community. ~~The same is true for the [release/graal-vm/23.1](https://github.com/oracle/graaljs/tree/release/graal-vm/23.1) branch of the GraalJS repository. Until now there's no corresponding community repository for GraalJS 23.1 [but discussions to create one are underway](https://graalvm.slack.com/archives/CNBFR78F9/p1725034816736779)~~. At the [GraalVM Community Summit 2024](https://www.graalvm.org/community/meetup/) Oracle has agreed to continue to maintain GraalJS 23.1 in the [release/graal-vm/23.1](https://github.com/oracle/graaljs/tree/release/graal-vm/23.1) branch of the GraalJS repository, so currently a comunity repository for GraalJS is not required.
+
 Building GraalJS (version `23.1.x`) from source:
 ```bash
 $ mkdir Graal
@@ -161,13 +169,77 @@ $MX_ALT_OUTPUT_ROOT/truffle/dists/truffle-json.jar \
 $MX_ALT_OUTPUT_ROOT/compiler/dists
 ```
 
-To build GraalJS you have to check out the Graal repository at the same directory level like the GraalJS repository (as showed in the build instructions above). If you don't do this, `mx build` will automatically clone the Graal repository at the commit specified in the `imports` section of `./graal-js/mx.graal-js/suite.py`.
+##### Building GraalJS maven artifacts
 
-The file `common.json` in the `graaljs` repository contains the version of `mx` that should be used for building GraalJS. It should be the same like `mx_version` in the `./graal` repository if both repositories are synced to the same tag or branch (e.g. `release/graal-vm/23.1` in this example).
+In order to build the GraalJS Maven artifacts, you first have to build the entire GraalJS suite (you can dynamically import any addition suites you want) and then execute `mx maven-deploy`:
+```bash
+$ MX_ALT_OUTPUT_ROOT=/tmp/graaljs-25.0 \
+  mx --dynamicimports /compiler --dynamicimports /substratevm \
+  build --build-logs oneline
+$ MX_ALT_OUTPUT_ROOT=/tmp/graaljs-25.0 \
+  mx --dynamicimports /compiler --dynamicimports /substratevm \
+  maven-deploy --all-suites \
+  --licenses EPL-2.0,PSF-License,GPLv2-CPE,ICU,GPLv2,BSD-simplified,BSD-new,UPL,MIT \
+  graalvm-snapshot-repo file:///tmp/graaljs-25.0-mvn
+```
 
-Notice that although GraalVM `23.1` is targeted for JDK 21, the pure Java artifacts built from the tag `release/graal-vm/23.1` of these libraries can be build (and the results can be used) with OpenJDK 17 and later.
+This will create a local Maven repository under `/tmp/graaljs-25.0-mvn`. `graalvm-snapshot-repo` is the mandatory `repository-id` argument of `mx maven-deploy` (run `mx maven-deploy --help` for more information) which I think isn't used for local deployments and `file:///tmp/graaljs-25.0-mvn` is the URL of the Maven repository (in this case a local directory).
 
-The [release/graal-vm/23.1](https://github.com/oracle/graal/tree/release/graal-vm/23.1) branch for GraalVM `23.1` for JDK 21 isn't supported by Oracle any more (at least not publicly). It has been moved to the master branch of the new [https://github.com/graalvm/graalvm-community-jdk21u](https://github.com/graalvm/graalvm-community-jdk21u) repository which is now maintained by the community. ~~The same is true for the [release/graal-vm/23.1](https://github.com/oracle/graaljs/tree/release/graal-vm/23.1) branch of the GraalJS repository. Until now there's no corresponding community repository for GraalJS 23.1 [but discussions to create one are underway](https://graalvm.slack.com/archives/CNBFR78F9/p1725034816736779)~~. At the [GraalVM Community Summit 2024](https://www.graalvm.org/community/meetup/) Oracle has agreed to continue to maintain GraalJS 23.1 in the [release/graal-vm/23.1](https://github.com/oracle/graaljs/tree/release/graal-vm/23.1) branch of the GraalJS repository, so currently a comunity repository for GraalJS is not required.
+Once we've deployed the GraalPy artifacts and their dependencies to a local repository, we can use it as follows in a POM file:
+
+<details>
+  <summary>Example POM file for a local Maven repository</summary>
+
+```xml
+  <repositories>
+    <!--
+        Local repository with snapshot builds.
+    -->
+    <repository>
+      <id>graalvm-snapshot-repo</id>
+      <name>graalvm-snapshot-repo</name>
+      <url>file://${MAVEN_REPOSITORY}</url>
+      <snapshots>
+        <enabled>true</enabled>
+      </snapshots>
+    </repository>
+  </repositories>
+
+  <profiles>
+    <profile>
+      <id>graal-25-0-0</id>
+      <build>
+        <directory>${basedir}/target-25-0-0</directory>
+      </build>
+      <activation>
+        <property>
+          <name>MAVEN_REPOSITORY</name>
+        </property>
+      </activation>
+      <properties>
+        <graalvm.version>25.0.0-SNAPSHOT</graalvm.version>
+      </properties>
+      ...
+    </profile>
+  </profiles>
+```
+</details>
+
+
+With these settings, the profile `graal-25-0-0` will be activated if we pass `-DMAVEN_REPOSITORY=/tmp/graaljs-25.0-mvn` on the `mvn` command line and it will look for the Graal/GraalJS artifacts with the version `25.0.0-SNAPSHOT` in the local Maven repository at `/tmp/graaljs-25.0-mvn` that we've just created.
+
+Once we run `mvn` with these parameters, the required artifacts will be copied from the local Maven repository into our local Maven cache (usuallyl located at `~/.m2`). We can remove all the cached dependencies of our current project/profile by using the [following command](https://www.baeldung.com/maven-clear-cache):
+
+```bash
+$ mvn -DMAVEN_REPOSITORY=/tmp/graaljs-25.0-mvn \
+  dependency:purge-local-repository -DactTransitively=false -DreResolve=false
+```
+
+> [!NOTE]
+> If we want to use the GraalJS artifacts from the local repository we've just created, we have to use `org.graalvm.js` instead of `org.graalvm.polyglot` as `groupId` for the `js-*` artifacts. This is because `mx maven-deploy` only builds the [org.graalvm.js/js](https://mvnrepository.com/artifact/org.graalvm.js/js) POM and not [org.graalvm.polyglot/js](https://mvnrepository.com/artifact/org.graalvm.polyglot/js). The latter is generated in the `graal/vm` suite by [`create_polyglot_meta_pom_distribution_from_base_distribution()`](https://github.com/oracle/graal/blob/c5df0c319473ceb21e7d9e9efa6896af496c0006/vm/mx.vm/mx_vm.py#L292) from the former and merely redirects to it.
+
+> [!NOTE]
+> Since Graal 25, the `-community` POM files are deprecated and will be removed in a future version. See [[GR-64087] Turn truffle-enterprise into an optional dependency](https://github.com/oracle/graal/pull/11401): "*GR-64087 Removed the dependency on `org.graalvm.truffle:truffle-enterprise` from all language and tool POM artifacts. As a result, the community Maven artifacts (those with an artifact ID ending in `-community`) are now identical to their corresponding non-community artifacts. Consequently, all community language and tool POM artifacts have been deprecated. Embedders using auxiliary engine caching, polyglot isolates, a isolated/untrusted sandbox policy, or the sandbox resource limits must now explicitly add the `org.graalvm.truffle:truffle-enterprise` Maven artifact to the classpath or module path*". Calling `mx maven-deploy` in the `graaljs/` directory will only create the `js*` artifacts and no `js-community` ones. The legacy `-community` artifacts can be generated when calling `mx maven-deploy` in the `graal/vm` directory (this will also generate the corresponding `org.graalvm.polyglot` artifacts along side the `org.graalvm.js` ones).
 
 #### Building the Truffle Profiler
 
